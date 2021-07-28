@@ -309,7 +309,7 @@ class NetworkConnection:
                NetworkTextBox.insert(END, "Node 2 Connected \n")
                self.slaveConnected = True
              else:
-               NetworkTextBox.insert(END, "Device connected on IP:" + str(addr[0]) +"\n")
+               NetworkTextBox.insert(END, "Device connected on IP:" + str(self.addr[0]) +"\n")
           except Exception,e:
              print str(e)
         #listen for message from slave 
@@ -321,11 +321,13 @@ class NetworkConnection:
           print "message recieved",message
           message = str(message.decode()+ '\n\n')
           TextBox.insert(END, message)
-          self.broadcastMessage('received')
+          #self.broadcastMessage('received')
         except Exception, e:
           print str(e)
         time.sleep(0.5)
       
+   def decode_message():
+     pass
 
       
 class SpecGPSDO:
