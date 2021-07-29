@@ -73,85 +73,6 @@ os.system('clear') # not sure if all this is neccessary yet
 # GPSDO presence flag
 GPSDO_Present = True
 
-
-#************************ Setup Complete ********************************
-
-# ************************ Variables ************************************
-#Tick boxs on mGui
-'''
-Track_state = IntVar()
-Sync_state = IntVar()
-GPS_state = IntVar()
-Beat_PPS_State = IntVar()
-Save_PPS_State = IntVar()
-Poll_GPSDO = IntVar() 
-# PPS Error Variables
-PPS_Error_Length = 10 #60 * 2 # length of PPS Error Arrays graph time axis (default 2 mins)
-Fine_Phase_Comp = deque(maxlen = PPS_Error_Length)
-Effective_Time_Int = deque(maxlen = PPS_Error_Length)
-PPSREF_Sigma = deque(maxlen = PPS_Error_Length)
-Polling_GPSDO = False
-Save_PPS = False
-Save_PPS_Flag = False
-#mGUI general variables
-TriggerTextLabel = StringVar()
-trig_time = StringVar()
-current_time = StringVar()
-exitFlag = -1
-Nil = 0b00000000 
-user_query = StringVar()
-#Variables for Oscillator Data Frame
-Gpsdo_Status = IntVar()
-Rb_Status = IntVar()
-Current_Freq = IntVar()
-Holdover_Freq = IntVar()
-Constant_Mode = IntVar()
-Constant_Value = IntVar()
-#Variables for GPS Receiver Data Frame
-GPSDO_Latitude = IntVar()
-GPSDO_Longitude = IntVar()
-GPSDO_Altitude = IntVar()
-GPSDO_Satellites = IntVar()
-GPSDO_Tracking = IntVar()
-GPSDO_Validity = IntVar()
-# GPS Popout Variables
-Latitude = StringVar()
-Longitude = StringVar()
-TimeUTC = StringVar()
-Altitude = StringVar()
-EPS = StringVar()
-EPX = StringVar()
-EPV = StringVar()
-EPT = StringVar()
-Speed = StringVar()
-Climb = StringVar()
-Track = StringVar()
-Mode = StringVar()
-Sat = StringVar()
-# Oscillator variables Window
-FreqAdj = StringVar()
-PeakVoltRB = StringVar()
-DC_Photo = StringVar()
-Varac = StringVar()
-RBLamp = StringVar()
-RBHeating = StringVar()
-Alarm = StringVar()
-Tracking = StringVar()
-Tau = StringVar()
-CompOff = StringVar()
-RawAdj = StringVar()
-FreqCorr = StringVar()
-SyncPeriod = StringVar()
-DisableTimeMonitor = False
-Calibrated = False
-GpsdoStatus = StringVar()
-
-
-DisableTimeMonitor = False
-GPS_Readings = False
-SystemTimeSet = False
-'''
-
 # *********************End of Variables *********************************
 
 #*************Exit Routine****************
@@ -216,89 +137,36 @@ def disconnectSlaves():
 
 # ******************** Save PPS Related Definitions ***************************
 
+'''
+functions to deal with saving gpsdo metrics to file
+'''
 
-def Save_PPS_Error(): 
-  if Save_PPS_State.get() == 1:
-        saveToFile(True)
-  elif Save_PPS_State.get() == 0:
-        saveToFile(False)
-        
-    
-def saveToFile(flag):
-  global Save_PPS, Save_PPS_Flag, writer,f
+def setup_file_to_save_gpsdo_metics(flag):
+  global gpsdo_metrics_writer, gpsdo_metrics_file
   header = ['GPS Time','epoch Time','GPSDO Status','RB Status','Current Freq','Holdover Freq','Time Constant Mode','Time Constant Value','Latitude','N/S','Longitude','E/W','Validiity','Fine Phase Comparator','Effective Time Interval','PPSREF sigma']
   if flag:
     print("Open file for saving GPSDO metrics")
     now = datetime.datetime.now()
     file_name = "GPSDO_Log_Files/N0_GPSDO_Log " + now.strftime("%Y-%m-%d %H:%M:%S")+ ".txt"
-    f = open(file_name,"a")
-    writer = csv.writer(f)
-    writer.writerow(header)
-    Save_PPS = True
+    gpsdo_metrics_file = open(file_name,"a")
+    gpsdo_metrics_writer = csv.writer(gpsdo_metrics_file)
+    gpsdo_metrics_writer.writerow(header)
   elif not flag:
-    Save_PPS = False
     try:
       f.close()
       print('Closing for saving GPSDO metrics')
     except( Exception,e):
       pass     
       
+def save_gpsdo_metrics_to_file():
+      global gpsdo_metrics_writer, gpsdo_metrics_file
+      gpsdo_metrics_writer.writerow([GPSDO.GpsDateTime,GPSDO.epochGpsDateTime,GPSDO.Status,GPSDO.RbStatus,GPSDO.CurrentFreq,GPSDO.HoldoverFreq,GPSDO.ConstantMode,GPSDO.ConstantValue,GPSDO.Latitude,GPSDO.LatitudeLabel,GPSDO.Longitude,GPSDO.LongitudeLabel,GPSDO.Validity,GPSDO.FinePhaseComp,GPSDO.EffTimeInt,GPSDO.PPSRefSigma])
       
-# ****************** End of PPS Save Related Definitions *********************
 
-
-
-
-# ******************** GPS related defintions********************
-
-
-    
-  
-# ************** Main window GPSDO metrics related defintions*****************
-
-# **************** GUI Function Definitions ************************     
-    
-
-      
-def GPSDO_Send(): 
-    query = user_query.get()+"\r"
-    response = GPSDO.sendQuery(query)
-    DO_TextBox.insert(END,response[:-2]+"\n")
-    DO_TextBox.yview(END)
-
-def pollGPSDO():
-   global Polling_GPSDO
-   if (Poll_GPSDO.get() == 1):
-     GPSDO.pollGpsdoMetrics(True)
-     Polling_GPSDO = True
-     mCheck_Save.config(state=ACTIVE)
-   elif (Poll_GPSDO.get() == 0):
-     GPSDO.pollGpsdoMetrics(False)
-     Polling_GPSDO = False
-     Save_PPS_State.set(0)
-     Save_PPS_Error()
-     mCheck_Save.config(state=DISABLED)
-
-def clock():
-  current_time.set("Time: "+str(datetime.datetime.now().time())[0:8] ) # refresh the display
-  mGui.after(1000, clock)       
-       
-# **************** End of GUI Function Definitions ************************     
-  
-# **************** End of function definitions ****************************************************************   
-       
-def setupMainUI():
-    '''
-    function to setup main Tkinter GUI window
-    '''
-    mainUI = main_ui_window.RadSyncUi()
-    mainUi.
-    
-       
        
 # *********************** Program Begin ********************************
 def main():
-    global Trigger
+    global Trigger, MainUi
     print("Entry point Success")
     
     #first check if a the GPSDO is reachable - if not break with error
@@ -306,7 +174,7 @@ def main():
     
     #setup Gui
     Trigger = trigger_control.Trigger() # Create trigger instance
-    setupMainUI()
+    MainUi = main_ui_window.RadSyncUi()
     
     
     
@@ -326,9 +194,6 @@ def main():
   
   
 
-#Initialise all required objects 
-Trigger = trigger_control.Trigger() # Create trigger instance
-GPSDO = grclok_1500.SpecGPSDO(GPSDO_Present) # Create GPSDO instance
 
 Setup_CheckBox()
 setSysTime() #set OS time to GPS Time

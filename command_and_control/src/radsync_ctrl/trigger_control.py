@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
+from . import main_script
 
 
 
@@ -80,7 +80,7 @@ class Trigger():
       #print "set Trigger Pending"
       mTriggerTimeEntry.configure(state=DISABLED) # Disable the entry box
       try: 
-        self.Delay_Trigger_Sec = int(trig_time.get()) # number of seconds in future to trigger
+        self.Delay_Trigger_Sec = int(main_script.user_trigger_delay_input.get()) # number of seconds in future to trigger
       except(Exception, e):
         pass
       if (self.Delay_Trigger_Sec < 10) or (self.Delay_Trigger_Sec == ""): #don't accept a trigger deadline less than 10s away.

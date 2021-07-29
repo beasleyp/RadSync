@@ -18,7 +18,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
+# Oscillator variables Window
+FreqAdj = ""
+PeakVoltRB = ""
+DC_Photo = ""
+Varac = ""
+RBLamp = ""
+RBHeating = ""
+Alarm = ""
+Tracking = ""
+Tau = ""
+CompOff = ""
+RawAdj = ""
+FreqCorr = ""
+SyncPeriod = ""
+DisableTimeMonitor = False
+Calibrated = False
+GpsdoStatus = ""
 
 
 
