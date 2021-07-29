@@ -49,7 +49,7 @@ import csv
 from . import trigger_control
 from . import grclok_1500
 from . import network_utils
-
+from . import main_ui_window
 
 # ************************** Setup **************************************
 
@@ -267,7 +267,7 @@ def GPSDO_Send():
     DO_TextBox.yview(END)
 
 def pollGPSDO():
-   global Polling_GPSDO# Copyright (C) University College London 2021
+   global Polling_GPSDO
    if (Poll_GPSDO.get() == 1):
      GPSDO.pollGpsdoMetrics(True)
      Polling_GPSDO = True
@@ -287,15 +287,27 @@ def clock():
   
 # **************** End of function definitions ****************************************************************   
        
-       
-       
+def setupMainUI():
+    '''
+    function to setup main Tkinter GUI window
+    '''
+    mainUI = main_ui_window.RadSyncUi()
+    
        
        
 # *********************** Program Begin ********************************
 def main():
-    #first check if a the GPSDO is reachable - if not break with error
-    GPSDO = grclok_1500.SpecGPSDO(True) # Create GPSDO instance
+    global Trigger
     print("Entry point Success")
+    
+    #first check if a the GPSDO is reachable - if not break with error
+    #GPSDO = grclok_1500.SpecGPSDO(True) # Create GPSDO instance
+    
+    #setup Gui
+    Trigger = trigger_control.Trigger() # Create trigger instance
+    setupMainUI()
+    
+    
     
 
 '''    

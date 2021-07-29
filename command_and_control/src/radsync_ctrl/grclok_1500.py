@@ -91,33 +91,35 @@ class SpecGPSDO():
     def setupSerialCon(self):
       if (self.gpsdoPresent == True):
          
-          with serial.Serial(
+             self.GPSDO_SER = serial.Serial(
                  port = '/dev/ttyS0',
                  baudrate = 9600,
                  parity = serial.PARITY_NONE,
                  stopbits = serial.STOPBITS_ONE,
                  bytesize = serial.EIGHTBITS,
-                 timeout = 1) as self.GPSDO_SER:
-              #print "GPSDO Setup Started"
-              c = 3
-              while (c > 0): #loop through 3 attempts to connect to GPSDO
-                  c -= 1
-                  if (self.getSerialNo() == ''):
-                    self.gpsdoDetected = False
-                    print("GPSDO not detected")
-                  else:
-                    time.sleep(0.1)
-                    self.setGpsCom(False)
-                    self.stopBeating()  #Ensure GPSDO isn't beating any messages
-                    time.sleep(0.1)
-              try:
+                 timeout = 1)
+             #print "GPSDO Setup Started"
+              
+             c = 3
+             while (c > 0): #loop through 3 attempts to connect to GPSDO
+                 c -= 1
+                 if (self.getSerialNo() == ''):
+                   self.gpsdoDetected = False
+                   print("GPSDO not detected")
+                 else:
+                   time.sleep(0.1)
+                   self.setGpsCom(False)
+                   self.stopBeating()  #Ensure GPSDO isn't beating any messages
+                   time.sleep(0.1)
+              
+             try:
                 gpsdoID = self.getID()
                 #DO_TextBox.insert(END,"GPSDO Communications Initiated\n")
                 #DO_TextBox.yview(END)
                 #print "GPSDO Communications Initiated"
                 print("GPSDO ID :", gpsdoID)
                 self.gpsdoDetected = True
-              except(Exception, e):
+             except(Exception, e):
                 print(str(e))
                 #Do_TextBox.insert(END,"GPSDO Communication Failed\n")
                 print("GPSDO Communication Failed")
