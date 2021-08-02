@@ -19,14 +19,12 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from . import main_script
-
-
-
+from . import grclok_1500_popout
 
 import RPi.GPIO as GPIO
 import time
-
-
+from tkinter import *
+import datetime
 
 class Trigger():
     #inialise class level static variables 
@@ -52,8 +50,8 @@ class Trigger():
       self.bladeradTrigg = True 
       self.freqdivTrigg = True
       self.triggId = 0;
+     
       #Setup Trigger IO Control 
-      High = GPIO.HIGH
       Low = GPIO.LOW
       GPIO.setwarnings(False)
       GPIO.cleanup()
@@ -78,31 +76,31 @@ class Trigger():
       
     def setTriggerPending(self):
       #print "set Trigger Pending"
-      mTriggerTimeEntry.configure(state=DISABLED) # Disable the entry box
+      main_script.MainUi.trigger_time_entry_box.configure(state=DISABLED) # Disable the entry box
       try: 
-        self.Delay_Trigger_Sec = int(main_script.user_trigger_delay_input.get()) # number of seconds in future to trigger
-      except(Exception, e):
+        self.Delay_Trigger_Sec = int(main_script.MainUi.user_trigger_delay_input.get()) # number of seconds in future to trigger
+      except Exception as e:
         pass
       if (self.Delay_Trigger_Sec < 10) or (self.Delay_Trigger_Sec == ""): #don't accept a trigger deadline less than 10s away.
-          TextBox.insert(END, "Minimum trigger delay is 10s;\nTrigger delay set to 10s; \n")
-          TextBox.yview(END)
+          main_script.MainUi.trigger_text_box.insert(END, "Minimum trigger delay is 10s;\nTrigger delay set to 10s; \n")
+          main_script.MainUi.trigger_text_box.yview(END)
           self.Delay_Trigger_Sec = 10
       self.calculatePulseDelay()
       self.Trigger_Pending = True
       
         
     def calculateTriggerTime(self):
-      if (Polling_GPSDO == True):
-         self.epochGpsTriggerTime = GPSDO.epochGpsDateTime + self.Delay_Trigger_Sec
+      if (main_script.MainUi.is_polling_gpsdo == True):
+         self.epochGpsTriggerTime = main_script.GPSDO.epochGpsDateTime + self.Delay_Trigger_Sec
          print( "GPS Trigger Deadline : ", self.epochGpsTriggerTime)
          self.broadcastTrigger()
          
-      if (Polling_GPSDO == False):
+      if (main_script.MainUi.is_polling_gpsdo == False):
          date = str(datetime.datetime.now())
          date = date[0:11]
          try:
-           gps_Time = GPSDO.getGpsTime()
-         except(Exception,e):
+           gps_Time = main_script.GPSDO.getGpsTime()
+         except Exception as e :
            print(str(e))
          print( "gps_time :", gps_Time)
          date_Time = date + gps_Time 
@@ -118,27 +116,29 @@ class Trigger():
          self.broadcastTrigger()
       
     def broadcastTrigger(self):
+        pass
+        '''
       if TCPServer.slaveConnected == True:
         Message = "TR_" + str(self.epochGpsTriggerTime) + "_" + str(self.triggId)
         TCPServer.broadcastMessage(Message)
         NetworkTextBox.insert(END, "Trigger Time Broadcast \n")
       else: 
         NetworkTextBox.insert(END, "Trigger Time not Broadcast \n")
-
+        '''
       
       
     def triggerSelect(self):      
       #Query UI trigger check boxes
-      if self.rfsoctriggState.get() == 1:
+      if main_script.MainUi.rfsoctriggState.get() == 1:
         self.rfsocTrigg = True
       else:
         self.rfsocTrigg = False
-      if self.bladeradtriggState.get() == 1:
+      if main_script.MainUi.bladeradtriggState.get() == 1:
         self.bladeradTrigg = True
       else:
         self.bladeradTrigg = False
-      if self.freqdivtriggState.get() == 1:
-        freqdivTrigg = True
+      if main_script.MainUi.freqdivtriggState.get() == 1:
+        self.freqdivTrigg = True
       else:
         self.freqdivTrigg = False
       
@@ -160,14 +160,14 @@ class Trigger():
       
     def calculatePulseDelay(self):
       #print "calc pre pulse"
-      self.Pulse_Pre_Delay = 1 + 0.5*GPSDO.PPSPulseWidth*0.000000001 - 0.5*self.Window_Length
+      self.Pulse_Pre_Delay = 1 + 0.5*main_script.GPSDO.PPSPulseWidth*0.000000001 - 0.5*self.Window_Length
       print("Pulse Pre_delay", str(self.Pulse_Pre_Delay))
       #print "completed calc"
       
     def realTimeCounter(self):
       if self.epochGpsTriggerTime != -1: #only clock RTC if there is a trigger time set.
-         delta = self.epochGpsTriggerTime - GPSDO.epochGpsDateTime
-         TriggerTextLabel.set("Time until Trigger: " + str(delta))
+         delta = self.epochGpsTriggerTime - main_script.GPSDO.epochGpsDateTime
+         main_script.MainUi.trigger_countdown_text.set("Time until Trigger: " + str(delta))
          if (delta == 1):
             GPIO.remove_event_detect(Trigger.PPS_OUT)
             self.sendTrigger() 
@@ -176,13 +176,15 @@ class Trigger():
       if self.Epoch_Trigger_Deadline != -1: #only clock RTC if there is a trigger time set.
         self.Epoch_Time += 1 # increment epoch time each time the RTC is clocked.
         delta = self.Epoch_Trigger_Deadline - self.Epoch_Time
-        TriggerTextLabel.set("Time until Trigger: " + str(delta))
+        main_script.MainUi.trigger_countdown_text.set("Time until Trigger: " + str(delta))
         print("old trigger")
         if delta == 1:
           self.sendTrigger()
           self.Epoch_Trigger_Deadline = -1 # reset the epoch trigger deadline
       
     def sendTrigger(self):
+      High = GPIO.HIGH
+      Low = GPIO.LOW  
       time.sleep(self.Pulse_Pre_Delay-0.3) # allow the current pulse to pass
       try:
           if self.rfsocTrigg == True:
@@ -204,14 +206,14 @@ class Trigger():
           GPIO.output(Trigger.Sync_Pass, Low) # ensure the pass pulse has gone low
           GPIO.output(Trigger.Sync_Pass, Low)
           GPIO.output(Trigger.Sync_Pass, Low)
-          if ((GPSDO.epochGpsDateTime - self.epochGpsTriggerTime) == 0):
-            TextBox.insert(END, 'N0 Trigger Valid \n')
-            print("time: ", GPSDO.epochGpsDateTime)
+          if ((main_script.GPSDO.epochGpsDateTime - self.epochGpsTriggerTime) == 0):
+            main_script.MainUi.trigger_text_box.insert(END, 'N0 Trigger Valid \n')
+            print("time: ", main_script.GPSDO.epochGpsDateTime)
             print("trigg time: " ,self.epochGpsTriggerTime)
           else:
-            TextBox.insert(END, 'Trigger Error of ' + str(int(GPSDO.epochGpsDateTime - self.epochGpsTriggerTime)) + ' s \n')     
-          TriggerTextLabel.set("Time until Trigger: Nil") # reset the trigger label
-          mTriggerTimeEntry.configure(state=NORMAL)
-      except(Exception,e):
+            main_script.MainUi.trigger_text_box.insert(END, 'Trigger Error of ' + str(int(main_script.GPSDO.epochGpsDateTime - self.epochGpsTriggerTime)) + ' s \n')     
+          main_script.MainUi.trigger_countdown_text.set("Time until Trigger: Nil") # reset the trigger label
+          main_script.MainUi.trigger_time_entry_box.configure(state=NORMAL)
+      except Exception as e:
           print(str(e))
           os._exit(1)

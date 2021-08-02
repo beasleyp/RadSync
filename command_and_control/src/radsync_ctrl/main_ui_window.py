@@ -19,6 +19,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from . import main_script
+from . import grclok_1500_popout
 
 from tkinter import *
 import matplotlib
@@ -38,39 +39,39 @@ class RadSyncUi():
         self.mGui.geometry("1900x1000+220+140") # Window Geometry
         self.mGui.title("GPSDO Synchrnonisation System - Master Node Control Interface")
         style.use("ggplot")
-        self.setup_ui_layout()
+        
         
         # Variables for Oscillator Data Frame
-        self.gpsdo_status = ''
-        self.rubidium_status = ''
-        self.current_gpsdo_freq = ''
-        self.gpsdo_holdover_freq = ''
-        self.gpsdo_time_constant_mode = ''
-        self.gpsdo_time_constant_value = ''
+        self.gpsdo_status = StringVar()
+        self.rubidium_status = StringVar()
+        self.current_gpsdo_freq = StringVar()
+        self.gpsdo_holdover_freq = StringVar()
+        self.gpsdo_time_constant_mode = StringVar()
+        self.gpsdo_time_constant_value = StringVar()
        
         # Variables for GPS Receiver Data Frame
-        self.gpsdo_latitude = ''
-        self.gpsdo_longitude = ''
-        self.gpsdo_altitude = ''
-        self.gpsdo_satellites = ''
-        self.gpsdo_tracking_info = ''
-        self.gpsdo_gps_validity = ''
+        self.gpsdo_latitude = StringVar()
+        self.gpsdo_longitude = StringVar()
+        self.gpsdo_altitude = StringVar()
+        self.gpsdo_satellites = StringVar()
+        self.gpsdo_tracking_info = StringVar()
+        self.gpsdo_gps_validity = StringVar()
                 
         # Variables for checkboxes
-        self.gpsdo_track_checkbox_state = 0
-        self.gpsdo_sync_checkbox_state = 0
-        self.gpsdo_gps_comms_checkbox_state = 0
-        self.gpsdo_polling_checkbox_state = 0 
-        self.save_gpsdo_metrics_checkbox_state = 0
+        self.gpsdo_track_checkbox_state = IntVar()
+        self.gpsdo_sync_checkbox_state = IntVar()
+        self.gpsdo_gps_comms_checkbox_state = IntVar()
+        self.gpsdo_polling_checkbox_state = IntVar()
+        self.save_gpsdo_metrics_checkbox_state = IntVar()
         
         # Variables to control polling
         self.is_polling_gpsdo = False
         self.save_gpsdo_metrics_flag = False
 
         # Variables for trigger box
-        self.user_trigger_delay_input = ""
-        #self.trigger_countdown_text = "" #to delete
-        
+        self.user_trigger_delay_input = StringVar()
+        self.trigger_countdown_text = StringVar()
+    
         # Variables for PPSOUT Error Variables
         self.pps_graphs_xaxis_length = 10 #60 * 2 # length of PPS Error Arrays graph time axis (default 2 mins)
         self.fine_phase_comparator_deque = deque(maxlen = self.pps_graphs_xaxis_length)
@@ -78,8 +79,17 @@ class RadSyncUi():
         self.ppsref_sigma_deque = deque(maxlen = self.pps_graphs_xaxis_length)
         
         # General Variables
-        self.current_time = ""
-        self.gpsdo_user_query = ""
+        self.current_time = StringVar()
+        self.gpsdo_user_query = StringVar()
+        
+        self.rfsoctriggState = IntVar()
+        self.bladeradtriggState = IntVar()
+        self.freqdivtriggState = IntVar()
+        
+        # Setup Ui Layout
+        self.setup_ui_layout()
+        self.update_gpsdo_metrics()
+        #self.mGui.mainloop()
     
     '''
     GPSDO related control functions 
@@ -121,8 +131,8 @@ class RadSyncUi():
     
     #was GpsdoSend
     def gpsdo_send(self): 
-        query = self.gpsdo_user_query.get()+"\r"
-        response = main_script.GPSDO.sendQuery(query)
+        query = self.gpsdo_user_query.get()
+        response = main_script.GPSDO.collectResponse(query)
         self.gpsdo_textbox.insert(END,response[:-2]+"\n")
         self.gpsdo_textbox.yview(END)
     
@@ -151,7 +161,14 @@ class RadSyncUi():
     '''
     UI related functions
     '''    
-        
+    def return_hit(self, event):
+      if (self.gpsdo_user_query.get() != ""):
+        self.gpsdo_send()
+        self.gpsdo_user_query.set("") # clear the query box when enter is pressed
+      if (self.gpsdo_user_query.get() != ""):
+        main_script.Trigger.setTriggerPending()
+      self.mGui.bind('<Return>',return_hit)
+            
     def clock(self):
         '''
         Function to update the clock on the main UI window- updates 1 Hz
@@ -166,26 +183,26 @@ class RadSyncUi():
        '''
        #Variables for Oscillator Data Frame
        self.gpsdo_status.set(main_script.GPSDO.Status)
-       self.rubidium_status.set(GPSDO.RbStatus)
-       self.current_gpsdo_freq.set(GPSDO.CurrentFreq)
-       self.gpsdo_holdover_freq.set(GPSDO.HoldoverFreq)
-       self.gpsdo_time_constant_mode.set(GPSDO.ConstantMode)
-       self.gpsdo_time_constant_value.set(GPSDO.ConstantValue)
+       self.rubidium_status.set(main_script.GPSDO.RbStatus)
+       self.current_gpsdo_freq.set(main_script.GPSDO.CurrentFreq)
+       self.gpsdo_holdover_freq.set(main_script.GPSDO.HoldoverFreq)
+       self.gpsdo_time_constant_mode.set(main_script.GPSDO.ConstantMode)
+       self.gpsdo_time_constant_value.set(main_script.GPSDO.ConstantValue)
        #Variables for GPS Receiver Data Frame
-       self.gpsdo_latitude.set(GPSDO.Latitude + " " + GPSDO.LatitudeLabel)
-       self.gpsdo_longitude.set(GPSDO.Longitude + " " + GPSDO.LongitudeLabel)
+       self.gpsdo_latitude.set(main_script.GPSDO.Latitude + " " + main_script.GPSDO.LatitudeLabel)
+       self.gpsdo_longitude.set(main_script.GPSDO.Longitude + " " + main_script.GPSDO.LongitudeLabel)
        #self.gpsdo_altitude.set(GPSDO.Altitude)
        #self.gpsdo_satellites.set(GPSDO.SatellitesPPS Error Items)
        #self.gpsdo_tracking_info.set(GPSDO.Tracking)
-       self.gpsdo_gps_validity.set(GPSDO.Validity)
+       self.gpsdo_gps_validity.set(main_script.GPSDO.Validity)
        self.mGui.after(1000, self.update_gpsdo_metrics)
        if self.save_gpsdo_metrics_flag:
            main_script.save_gpsdo_metrics_to_file()
     
-    def Setup_CheckBox(self):
+    def setup_checkboxes(self):
         #setup GPSDO control check boxes
-        tracking = GPSDO.isTrackingSet()
-        synced = GPSDO.isSyncSet()
+        tracking = main_script.GPSDO.isTrackingSet()
+        synced = main_script.GPSDO.isSyncSet()
         if (tracking == True):
             self.gpsdo_track_checkbox_state.set(1)
         elif (tracking == False):
@@ -194,14 +211,15 @@ class RadSyncUi():
              self.gpsdo_sync_checkbox_state.set(1)
         elif (synced == False):
              self.gpsdo_sync_checkbox_state.set(0)
-        GPSDO.setGpsCom(False)
+        main_script.GPSDO.setGpsCom(False)
         self.save_gpsdo_metrics_checkbox_state.set(0)
         self.gpsdo_polling_checkbox_state.set(0)
         self.save_gpsdo_metrics_checkbox_state.set(0)
 
                  
-    def animate(self):
+    def animate(self,i):
         if self.is_polling_gpsdo:
+            
            self.effective_time_interval_deque.append(main_script.GPSDO.EffTimeInt)
            self.fine_phase_comparator_deque.append(main_script.GPSDO.FinePhaseComp)
            self.ppsref_sigma_deque.append(main_script.GPSDO.PPSRefSigma)
@@ -272,15 +290,15 @@ class RadSyncUi():
         mlabel = Label(trigger_control_frame,text="RFSoC: ").grid(row=1,column=0)
         mlabel = Label(trigger_control_frame,text="bladeRAD: ").grid(row=1,column=1)
         mlabel = Label(trigger_control_frame,text="Freq Div: ").grid(row=1,column=2)
-        mCheck_rfsocTrigg = Checkbutton(trigger_control_frame,state=ACTIVE,variable=main_script.Trigger.rfsoctriggState,onvalue=1,offvalue=0,command=main_script.Trigger.triggerSelect)
-        mCheck_bladeradTrigg = Checkbutton(trigger_control_frame,state=ACTIVE,variable=main_script.Trigger.bladeradtriggState,onvalue=1,offvalue=0,command=main_script.Trigger.triggerSelect)
-        mCheck_freqdiv_Trigg = Checkbutton(trigger_control_frame,state=ACTIVE,variable=main_script.Trigger.freqdivtriggState,onvalue=1,offvalue=0,command=main_script.Trigger.triggerSelect)
+        mCheck_rfsocTrigg = Checkbutton(trigger_control_frame,state=ACTIVE,variable=self.rfsoctriggState,onvalue=1,offvalue=0,command=main_script.Trigger.triggerSelect)
+        mCheck_bladeradTrigg = Checkbutton(trigger_control_frame,state=ACTIVE,variable=self.bladeradtriggState,onvalue=1,offvalue=0,command=main_script.Trigger.triggerSelect)
+        mCheck_freqdiv_Trigg = Checkbutton(trigger_control_frame,state=ACTIVE,variable=self.freqdivtriggState,onvalue=1,offvalue=0,command=main_script.Trigger.triggerSelect)
         mCheck_rfsocTrigg.grid(row=2,column=0)
         mCheck_bladeradTrigg.grid(row=2,column=1)
         mCheck_freqdiv_Trigg.grid(row=2,column=2)
         mTrigLabel = Label(trigger_control_frame,text="Enter seconds in future to Trigger").grid(row=3,column=0, columnspan=3,sticky=W,padx=5)
-        mTriggerTimeEntry = Entry(trigger_control_frame,textvariable=self.user_trigger_delay_input)
-        mTriggerTimeEntry.grid(row=4,column=0,columnspan=2,sticky=W,padx=5)
+        self.trigger_time_entry_box = Entry(trigger_control_frame,textvariable=self.user_trigger_delay_input)
+        self.trigger_time_entry_box.grid(row=4,column=0,columnspan=2,sticky=W,padx=5)
         mTrigConfirm = Button(trigger_control_frame,text="Confirm",command=main_script.Trigger.setTriggerPending).grid(row=4,column=2,padx=5)
         self.trigger_countdown_text.set("Seconds until Trigger: Nil")
         mTrigLabel = Label(trigger_control_frame,textvariable=self.trigger_countdown_text).grid(row=5,column=0,columnspan=3,sticky=W,padx=5)
@@ -302,7 +320,7 @@ class RadSyncUi():
         
         
         self.mTimeLabel = Label(left_frame,textvariable=self.trigger_text_box).grid(row=4,sticky=W,pady=10,padx=5)
-        mExit = Button(left_frame,text="Exit",command=exit_routine).grid(row=5,sticky=W,padx=5)
+        mExit = Button(left_frame,text="Exit",command=main_script.exit_routine).grid(row=5,sticky=W,padx=5)
         
         
         #***** Finish Populate Left Frame ********
@@ -318,7 +336,7 @@ class RadSyncUi():
         metrics_bar_frame = Frame(right_frame,highlightbackground="black", highlightthickness=2)
         metrics_bar_frame.grid(row=1,column=0,pady=10,padx=10,sticky=N)
         
-        GPSDO_Terminal = Button(metrics_bar_frame,text="GPSDO Parameters",command=LaunchTerminal)
+        GPSDO_Terminal = Button(metrics_bar_frame,text="GPSDO Parameters",command=grclok_1500_popout.LaunchTerminal())
         GPSDO_Terminal.grid(row=0,column=0,columnspan=2, pady=5, padx=10)
         mlabel = Label(metrics_bar_frame,text="Poll GPSDO",width=labelw,justify=LEFT,anchor="w").grid(row=1,column=0, padx=xpad,pady=ypad)
         mCheck_Poll = Checkbutton(metrics_bar_frame,state=ACTIVE,variable=self.gpsdo_polling_checkbox_state,onvalue=1,offvalue=0,command=self.poll_gpsdo)

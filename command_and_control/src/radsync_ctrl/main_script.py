@@ -101,8 +101,9 @@ def stopThread(self):
 # ************* General Program Related Definitions **********************
 
 def setSysTime():
-  SysTimeSet = False
-  if (SysTimeSet == False):
+  global system_time_set_flag
+  system_time_set_flag = False
+  if (system_time_set_flag == False):
     try:
         GPSDO_Date = GPSDO.getGpsDate()
         GPSDO_Time = GPSDO.getGpsTime()
@@ -110,32 +111,17 @@ def setSysTime():
         gpstime = GPSDO_Date[0:4] + GPSDO_Date[5:7] + GPSDO_Date[8:10] + " " + GPSDO_Time
         os.system('sudo date -u --set="%s"'% gpstime)
         print("System Time set to GPS time")
-    except( Exception, e):
+        system_time_set_flag = True
+    except(Exception, e):
       print(str(e))
-
-def return_hit(event): ####
-  if (user_query.get() != ""):
-    GPSDO_Send()
-    user_query.set("") # clear the query box when enter is pressed
-  if (trig_time.get() != ""):
-    Trigger.setTriggerPending()
-    #trig_time.set("") # clear the trigger query box
-  mGui.bind('<Return>',return_hit)
   
 # ************** End of General System Setup Related Definitions **************
           
 
 # ******************** Network Related Definitions ***************************
-
-def listenForSlaves():
-  TCPServer.startServer()
-
-def disconnectSlaves():
-  TCPServer.stopServer()
   
 # **************** End of Network Related Definitions *************************
 
-# ******************** Save PPS Related Definitions ***************************
 
 '''
 functions to deal with saving gpsdo metrics to file
@@ -155,7 +141,7 @@ def setup_file_to_save_gpsdo_metics(flag):
     try:
       f.close()
       print('Closing for saving GPSDO metrics')
-    except( Exception,e):
+    except(Exception,e):
       pass     
       
 def save_gpsdo_metrics_to_file():
@@ -166,17 +152,22 @@ def save_gpsdo_metrics_to_file():
        
 # *********************** Program Begin ********************************
 def main():
-    global Trigger, MainUi
+    global Trigger, MainUi, GPSDO
     print("Entry point Success")
     
-    #first check if a the GPSDO is reachable - if not break with error
-    #GPSDO = grclok_1500.SpecGPSDO(True) # Create GPSDO instance
     
-    #setup Gui
+    #Initialise Trigger
     Trigger = trigger_control.Trigger() # Create trigger instance
+    
+    # Start GPSDO service
+    GPSDO = grclok_1500.SpecGPSDO(True) # Create GPSDO instance
+    
+    #Initialsie Main UI window 
     MainUi = main_ui_window.RadSyncUi()
     
-    
+    # Start UI main thread
+    MainUi.setup_checkboxes() 
+    MainUi.mGui.mainloop()    
     
 
 '''    

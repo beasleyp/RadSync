@@ -18,10 +18,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from . import main_script
+
 
 import serial
 import threading
 import time
+from tkinter import *
+import datetime
 
 
 
@@ -114,14 +118,14 @@ class SpecGPSDO():
               
              try:
                 gpsdoID = self.getID()
-                #DO_TextBox.insert(END,"GPSDO Communications Initiated\n")
-                #DO_TextBox.yview(END)
+                #main_script.MainUi.gpsdo_textbox.insert(END,"GPSDO Communications Initiated\n")
+                #main_script.MainUi.gpsdo_textbox.yview(END)
                 #print "GPSDO Communications Initiated"
                 print("GPSDO ID :", gpsdoID)
                 self.gpsdoDetected = True
-             except(Exception, e):
+             except Exception as e:
                 print(str(e))
-                #Do_TextBox.insert(END,"GPSDO Communication Failed\n")
+                #main_script.MainUi.gpsdo_textbox.insert(END,"GPSDO Communication Failed\n")
                 print("GPSDO Communication Failed")
                 self.gpsdoDetected = False
     
@@ -129,8 +133,8 @@ class SpecGPSDO():
         com = str(command + "\r")
         self.GPSDO_SER.write(str.encode(com))
         response = str(self.GPSDO_SER.readline().decode("utf-8"))
-        #DO_TextBox.insert(END,response[:-2]+"\n")
-        #DO_TextBox.yview(END)
+        main_script.MainUi.gpsdo_textbox.insert(END,response[:-2]+"\n")
+        main_script.MainUi.gpsdo_textbox.yview(END)
 
     def collectResponse(self, command): #pass command to GPSDO and return response to call
         com = str(command + "\r")
@@ -139,7 +143,7 @@ class SpecGPSDO():
         return response          
     
     def readLine(self):
-        return self.GPSDO_SER.readline()
+        return str(self.GPSDO_SER.readline().decode("utf-8"))
      
     def sendQuery(self, query):         # method for querying GPSDO 
         self.GPSDO_SER.write(query)
@@ -203,9 +207,9 @@ class SpecGPSDO():
      
     def getPPSPulseWidth(self):
          pulse_Length = self.collectResponse('PW?????????') 
-         #print "Pulse Length in ns:" , pulse_Length
+         #print( "Pulse Length in ns:" , pulse_Length)
          self.PPSPulseWidth = 66*round(float(pulse_Length)/66) # find the actual pulse length, must be multiple of 66ns
-         #print "Pulse length in ns:", pulse_Length 
+         #print( "Pulse length in ns:", pulse_Length)
          return self.PPSPulseWidth  
                                    
     def stopBeating(self):
@@ -214,7 +218,7 @@ class SpecGPSDO():
           self.collectResponse("BT0")
           self.collectResponse("MAW0B00")
           self.collectResponse("MAW0C00")
-          time.sleep(0.1)
+          time.sleep(0.15)
           response = self.readLine()
           #response = self.readLine()
           if not response: break
@@ -248,7 +252,7 @@ class SpecGPSDO():
       count = 5
       try:
         M = self.collectResponse('M')
-      except(Exception,e):
+      except Exception as e:
         print(str(e))
         M = " "
       if (len(M) != 26):
@@ -258,7 +262,7 @@ class SpecGPSDO():
             time.sleep(2)
             M = self.collectResponse('M')
             count -= 1
-        except(Exception,e):
+        except Exception as e:
           print(str(e))
       self.FreqAdjRaw = int(M[0:2],16)
       self.Reserve1 = int(M[3:5],16)
@@ -321,7 +325,7 @@ class SpecGPSDO():
             self.decodePTNTS(response)
           elif (response[0:6] == "$GPRMC"):
             self.decodeGPRMC(response)
-        except(Exception,e):
+        except Exception as e:
           pass
           #print str(e)
         time.sleep(0.1)
@@ -338,6 +342,7 @@ class SpecGPSDO():
     
     def decodePTNTA(self, response):
        responseArray = response.split(",")
+       
        #Date and time
        self.GpsDateTime = int(responseArray[1]);
        newEpochTime = self.dateTimeToEpoch(responseArray[1])
@@ -346,7 +351,8 @@ class SpecGPSDO():
           print(newEpochTime - self.epochGpsDateTime)
        self.epochGpsDateTime = newEpochTime
        self.firstQuery = False
-       #print "GPS Time : ", self.GpsDateTime
+       #print( "GPS Time : ", self.GpsDateTime)
+       
        #Oscilator Quality 
        if (responseArray[2]=="0"):
           self.RbStatus = "Warming Up"
@@ -354,16 +360,20 @@ class SpecGPSDO():
           self.RbStatus = "Freerun"
        elif (responseArray[2]=="2"):
           self.RbStatus = "Disciplined"
-       #PPSREF-PPSInT Interval
+       
+        #PPSREF-PPSInT Interval
        val = int(responseArray[4])
        if val < 499999999:
          self.EffTimeInt = int(responseArray[4])
        else:
          self.EffTimeInt = int(responseArray[4])-999999999
-       #Fine Phase Comparator
+       
+        #Fine Phase Comparator
        self.FinePhaseComp = int(responseArray[5])
+       
        #GPSDO Status
        self.Status = self.decodeGPSDOStatus(str(responseArray[6]))
+       
        #GPS Vaalidity 
        validity = responseArray[8].split("*")
        if (validity[0] == "0"):

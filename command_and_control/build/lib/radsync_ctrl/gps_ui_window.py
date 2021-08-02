@@ -20,6 +20,25 @@
 
 
 
+
+
+
+# GPS Popout Variables
+Latitude = ""
+Longitude = ""
+TimeUTC = ""
+Altitude = ""
+EPS = ""
+EPX = ""
+EPV = ""
+EPT = ""
+Speed = ""
+Climb = ""
+Track = ""
+Mode = ""
+Sat = ""
+
+
 def ExitGPS():####
     global gps_top, GPS_Readings
     GPSDO.getGpsData(False)
