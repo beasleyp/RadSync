@@ -18,10 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 from . import main_script
-
 
 from tkinter import *
 import matplotlib
@@ -32,28 +29,6 @@ import matplotlib.animation as animation
 from matplotlib import style
 from collections import deque
 import numpy as np
-
-
-
-'''
-Initialise Global Variables used in the Gui
-'''
-
-
-
-
-
-
-exitFlag = -1
-Nil = 0b00000000 
-user_query = ""
- 
-
-
-
-
-
-
 
 class RadSyncUi():
     
@@ -104,6 +79,7 @@ class RadSyncUi():
         
         # General Variables
         self.current_time = ""
+        self.gpsdo_user_query = ""
     
     '''
     GPSDO related control functions 
@@ -145,7 +121,7 @@ class RadSyncUi():
     
     #was GpsdoSend
     def gpsdo_send(self): 
-        query = user_query.get()+"\r"
+        query = self.gpsdo_user_query.get()+"\r"
         response = main_script.GPSDO.sendQuery(query)
         self.gpsdo_textbox.insert(END,response[:-2]+"\n")
         self.gpsdo_textbox.yview(END)
@@ -199,7 +175,7 @@ class RadSyncUi():
        self.gpsdo_latitude.set(GPSDO.Latitude + " " + GPSDO.LatitudeLabel)
        self.gpsdo_longitude.set(GPSDO.Longitude + " " + GPSDO.LongitudeLabel)
        #self.gpsdo_altitude.set(GPSDO.Altitude)
-       #self.gpsdo_satellites.set(GPSDO.Satellites)
+       #self.gpsdo_satellites.set(GPSDO.SatellitesPPS Error Items)
        #self.gpsdo_tracking_info.set(GPSDO.Tracking)
        self.gpsdo_gps_validity.set(GPSDO.Validity)
        self.mGui.after(1000, self.update_gpsdo_metrics)
@@ -279,7 +255,7 @@ class RadSyncUi():
         self.mCheck_SY.grid(row=3,column=1)
         self.mCheck_GPS.grid(row=3,column=2)
         mlabel = Label(gpsdo_control_frame,text="Enter Query").grid(row=4,column=0,columnspan=3,sticky=W,padx=5)
-        self.gpsdo_message_entry = Entry(gpsdo_control_frame,textvariable=user_query).grid(row=5,column=0,columnspan=2,sticky=W,padx=5)
+        self.gpsdo_message_entry = Entry(gpsdo_control_frame,textvariable=self.gpsdo_user_query).grid(row=5,column=0,columnspan=2,sticky=W,padx=5)
         self.mbutton = Button(gpsdo_control_frame,text="Send",command=self.gpsdo_send).grid(row=5,column=2,padx=5)
         self.mlabel = Label(gpsdo_control_frame,text="GPSDO Response").grid(row=6,column=0,columnspan=3,sticky=W,padx=5)
         self.gpsdo_textbox = Text(gpsdo_control_frame,height=6,width=45)
@@ -396,7 +372,6 @@ class RadSyncUi():
         #End of GPS Receiever Frame
         
         #Setup Figures
-        
         fpc_figure, (self.fpco,self.etio,self.sigo) = plt.subplots(nrows=3, ncols=1, figsize=(14,8), dpi=75, constrained_layout=True)
         graph_frame = Frame(right_frame,highlightbackground="black", highlightthickness=2,bg="white")
         graph_frame.grid(row=2,column=0,columnspan=3,pady=10,padx=10)
@@ -404,4 +379,4 @@ class RadSyncUi():
         fpc_canvas.get_tk_widget().grid(row=0,column=0,sticky=W,pady=10,padx=10)
         ani = animation.FuncAnimation(fpc_figure, self.animate, interval=1000)
         fpc_canvas.draw()
-        # End of PPS Error Items
+        # End of figures
