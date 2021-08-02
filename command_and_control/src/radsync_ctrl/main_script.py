@@ -51,29 +51,11 @@ from . import grclok_1500
 from . import network_utils
 from . import main_ui_window
 
-# ************************** Setup **************************************
-
-# elevate python
-#pythonPID = os.getpid()
-#elevatePriority = "sudo renice -n -19 -p " + str(pythonPID)
-#os.system(elevatePriority)
-#elevate idle
 os.system('sudo renice -18 `pgrep idle`')
-
-# gpsd lifecycle managment
-os.system('clear') # not sure if all this is neccessary yet
-#os.system('sudo killall gpsd')
-#os.system('sudo gpsd /dev/ttyS0 -F /var/run/gpsd.sock')
-#os.system('sudo service ntp restart')
-# end of commands to reset the service
-
-
-
-
+os.system('clear') 
 # GPSDO presence flag
 GPSDO_Present = True
 
-# *********************End of Variables *********************************
 
 #*************Exit Routine****************
 def exit_routine(): # runs this routine upon exit
@@ -94,12 +76,6 @@ def stopThread(self):
     self.process.terminate()
     self.process = None
 
-#***************END***********************
-
-
-  
-# ************* General Program Related Definitions **********************
-
 def setSysTime():
   global system_time_set_flag
   system_time_set_flag = False
@@ -115,13 +91,6 @@ def setSysTime():
     except(Exception, e):
       print(str(e))
   
-# ************** End of General System Setup Related Definitions **************
-          
-
-# ******************** Network Related Definitions ***************************
-  
-# **************** End of Network Related Definitions *************************
-
 
 '''
 functions to deal with saving gpsdo metrics to file
@@ -169,29 +138,3 @@ def main():
     MainUi.setup_checkboxes() 
     MainUi.mGui.mainloop()    
     
-
-'''    
-    
-    # Setup the GUI
-    mGui = Tk()
-    mGui.geometry("1900x1000+220+140") # Window Geometry
-    mGui.title("GPSDO Synchrnonisation System - Master Node Control Interface")
-    #mGui.configure(bg="skyblue")
-    LARGE_FONT= ("Verdana", 12)
-    style.use("ggplot")
-    # End of GUI setup 
-  
-  
-  
-  
-
-
-Setup_CheckBox()
-setSysTime() #set OS time to GPS Time
-#clock() #Setup live clock on GUI
-mGui.after(1000, updateGpsdoMetrics)
-TCPServer = network_utils.RadSyncServer() #Create NetworkConnection Server
-mGui.mainloop() #End of program
-
-# *********************** Program End ********************************
-'''
