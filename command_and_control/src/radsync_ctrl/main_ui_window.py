@@ -193,7 +193,14 @@ class RadSyncUi():
         # request a trigger from trigger routine with trigger_delay in s  
         main_script.Trigger.setTriggerPending(trigger_delay)
     
+    '''
+    Network related functions 
+    '''
+    def _connect_to_master(self):
+        pass
     
+    def _disconnect_from_master(self):
+        pass
     
     '''
     UI related functions
@@ -440,7 +447,7 @@ class RadSyncUi():
         
     def _setup_slave_ui_layout(self):
         '''
-        function to setup the main UI structure
+        function to setup a slave UI structure
         '''
 
         # Create left and right frames
@@ -479,19 +486,6 @@ class RadSyncUi():
         trigger_control_frame = Frame(left_frame, width=575, height=200,highlightbackground="black", highlightthickness=2)
         trigger_control_frame.grid(row=1,column=0,pady=10,padx=10)
         mlabel = Label(trigger_control_frame,text="Trigger Controls",font=("Arial", 11)).grid(row=0,column=0,columnspan=3,pady=5,padx=5)
-        mlabel = Label(trigger_control_frame,text="RFSoC: ").grid(row=1,column=0)
-        mlabel = Label(trigger_control_frame,text="bladeRAD: ").grid(row=1,column=1)
-        mlabel = Label(trigger_control_frame,text="Freq Div: ").grid(row=1,column=2)
-        mCheck_rfsocTrigg = Checkbutton(trigger_control_frame,state=ACTIVE,variable=self.rfsoctriggState,onvalue=1,offvalue=0,command=main_script.Trigger.triggerSelect)
-        mCheck_bladeradTrigg = Checkbutton(trigger_control_frame,state=ACTIVE,variable=self.bladeradtriggState,onvalue=1,offvalue=0,command=main_script.Trigger.triggerSelect)
-        mCheck_freqdiv_Trigg = Checkbutton(trigger_control_frame,state=ACTIVE,variable=self.freqdivtriggState,onvalue=1,offvalue=0,command=main_script.Trigger.triggerSelect)
-        mCheck_rfsocTrigg.grid(row=2,column=0)
-        mCheck_bladeradTrigg.grid(row=2,column=1)
-        mCheck_freqdiv_Trigg.grid(row=2,column=2)
-        mTrigLabel = Label(trigger_control_frame,text="Enter seconds in future to Trigger").grid(row=3,column=0, columnspan=3,sticky=W,padx=5)
-        self.trigger_time_entry_box = Entry(trigger_control_frame,textvariable=self.user_trigger_delay_input)
-        self.trigger_time_entry_box.grid(row=4,column=0,columnspan=2,sticky=W,padx=5)
-        mTrigConfirm = Button(trigger_control_frame,text="Confirm",command=self._request_trigger).grid(row=4,column=2,padx=5)
         self.trigger_countdown_text.set("Seconds until Trigger: Nil")
         mTrigLabel = Label(trigger_control_frame,textvariable=self.trigger_countdown_text).grid(row=5,column=0,columnspan=3,sticky=W,padx=5)
         self.trigger_text_box = Text(trigger_control_frame, height=8, width=45)
@@ -508,7 +502,9 @@ class RadSyncUi():
         self.network_text_box.grid(row=1,column=0,columnspan=2,pady=5,padx=5)
         self.network_text_box_scroll = Scrollbar(self.network_text_box,command=self.network_text_box.yview)
         self.network_text_box.configure(yscrollcommand=scroll.set)
-
+        mButtonListen = Button(network_control_frame,text="Connect",command=self._connect_to_master).grid(row=2,column=0,pady=5,padx=5)
+        mButtonDisconnect = Button(network_control_frame,text="Disconnect",command=self._disconnect_from_master).grid(row=2,column=1,pady=5,padx=5)
+        #End of Network management frame
         
         
         self.mTimeLabel = Label(left_frame,textvariable=self.trigger_text_box).grid(row=4,sticky=W,pady=10,padx=5)

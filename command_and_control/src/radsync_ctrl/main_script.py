@@ -150,8 +150,8 @@ def main():
     
     if args.node == 1:
         #Initialise Trigger
-        Trigger = trigger_control.Trigger(args.node) # Create trigger instance
-        MainUi = main_ui_window.RadSyncUi()
+        Trigger = trigger_control.Trigger() # Create trigger instance
+        MainUi = main_ui_window.RadSyncUi(args.node)
 
     # Start UI main thread
     MainUi.setup_checkboxes() 
