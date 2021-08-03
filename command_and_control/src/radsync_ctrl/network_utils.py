@@ -18,6 +18,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+
+# static ip addresses of Raspberry Pis
+node_0_ip_address = "192.168.1.200"
+node_1_ip_address = "192.168.1.201"
+node_2_ip_address= "192.168.1.202"
+
+
 import socket 
 
 
@@ -26,15 +33,13 @@ class RadSyncServer():
    def __init__(self):
       self.slaveConnected = False
       #Setup the network parameters
-      self.LocalAddr = "192.168.1.200"
-      self.RaspN1Addr = "192.168.1.201"
-      self.RaspN2Addr = "192.168.1.202"
+
       self.Port = 25001
       self.Buffer_Size = 1024
       #create socket
       self.serverLive = False
       self.tcpSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      self.tcpSocket.bind((self.LocalAddr, self.Port))
+      self.tcpSocket.bind((node_0_ip_address, self.Port))
       self.startServer()   
                
    def startServer(self):

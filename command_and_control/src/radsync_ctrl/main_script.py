@@ -50,6 +50,7 @@ from . import trigger_control
 from . import grclok_1500
 from . import network_utils
 from . import main_ui_window
+from . import radsync_network_interface as raddic
 
 os.system('sudo renice -18 `pgrep idle`')
 os.system('clear') 
@@ -110,10 +111,36 @@ def save_gpsdo_metrics_to_file():
       gpsdo_metrics_writer.writerow([GPSDO.GpsDateTime,GPSDO.epochGpsDateTime,GPSDO.Status,GPSDO.RbStatus,GPSDO.CurrentFreq,GPSDO.HoldoverFreq,GPSDO.ConstantMode,GPSDO.ConstantValue,GPSDO.Latitude,GPSDO.LatitudeLabel,GPSDO.Longitude,GPSDO.LongitudeLabel,GPSDO.Validity,GPSDO.FinePhaseComp,GPSDO.EffTimeInt,GPSDO.PPSRefSigma])
       
 
-
-
-
-
+class sync_system_state():
+    '''
+    class and methods used to track the state of the synchrnoisation system
+        used by master and slave nodes to 
+    '''    
+    def __init__(self,this_node):
+        if this_node == 0:
+            self.this_node_gps_quality = raddic.not_connected
+            self.node_1_gps_quality = raddic.not_connected
+            self.node_2_gps_quality = raddic.not_connected
+            self.this_node_trig_validity = raddic.not_connected
+            self.node_1_trig_validity = raddic.not_connected
+            self.node_2_trig_validity = raddic.not_connected
+        else:
+            self.this_node_gps_quality = raddic.not_connected
+            self.this_node_trig_validity = raddic.not_connected
+    
+    def get_node_gps_state():
+        if GPSDO.Status == "Sync to PPS REF":
+            pps_error = int(GPSDO.FinePhaseComp)
+            if pps_error < 10:
+                self.this_node_gps_quality = raddic.good_gps_sync
+            elif pps_error < 20:
+                 self.this_node_gps_quality = raddic.nominal_gps_sync
+            else:
+                 self.this_node_gps_quality = raddic.poor_gps_sync
+        else:
+            self.this_node_gps_quality = GPSDO.Status
+    
+    
 def parse_cmdline_args():
     '''
     passes the command line arguments to the scripts 
