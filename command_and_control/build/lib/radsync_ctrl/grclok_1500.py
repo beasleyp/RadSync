@@ -28,6 +28,27 @@ from tkinter import *
 import datetime
 
 
+def _decodeGPSDOStatus(x):
+      return {
+        '0' : "Warming Up",
+        '1' : "Tracking Set Up",
+        '2' : "Tracking PPS REF",
+        '3' : "Sync to PPS REF",
+        '4' : "Free Run",
+        '5' : "PPS REF Unstable",
+        '6' : "No PPS REF",
+        '7' : "Frozen",
+        '8' : "Factory Diagnostic",
+        '9' : "Searching RB Line...",
+        }[x]
+
+def _dateTimeToEpoch(dateTime):
+        p = '%Y%m%d%H%M%S'
+        epoch = datetime.datetime(1970, 1, 1)
+        #print "epoch :", epoch
+        epochTime = (datetime.datetime.strptime(dateTime,p) - epoch).total_seconds()
+        #print "epoch_Time :", epochTime
+        return epochTime
 
 class SpecGPSDO():
     '''
@@ -39,7 +60,7 @@ class SpecGPSDO():
       self.gpsdoPresent = presence_flag
       self.gpsdoDetected = False
       self.streamGps = False
-      self.setupSerialCon()
+      self._setupSerialCon()
       self.firstQuery = True
       #Intialise Rb metrics
       self.FreqAdjRaw = -1
@@ -55,7 +76,7 @@ class SpecGPSDO():
       self.DC_PhotoNorm = ""
       self.VaracCtrlNorm = ""
       self.RBLampCurrentNorm = ""
-      self.RBHeatingCurrentNorm = ""    
+      self.RBHeatingCurrentNorm = ""
       #Intialise tracking metrics     
       self.AlarmVal = ""
       self.TrackingVal = ""
@@ -92,7 +113,7 @@ class SpecGPSDO():
       self.getPPSPulseWidth()
       
             
-    def setupSerialCon(self):
+    def _setupSerialCon(self):
       if (self.gpsdoPresent == True):
          
              self.GPSDO_SER = serial.Serial(
@@ -105,7 +126,7 @@ class SpecGPSDO():
              #print "GPSDO Setup Started"
               
              c = 3
-             while (c > 0): #loop through 3 attempts to connect to GPSDO
+             while c > 0: #loop through 3 attempts to connect to GPSDO
                  c -= 1
                  if (self.getSerialNo() == ''):
                    self.gpsdoDetected = False
@@ -129,7 +150,8 @@ class SpecGPSDO():
                 print("GPSDO Communication Failed")
                 self.gpsdoDetected = False
     
-    def passCommand(self, command):     #pass command to GPSDO and display response in GPSDO response textbox
+    
+    def _passCommand(self, command):     #pass command to GPSDO and display response in GPSDO response textbox
         com = str(command + "\r")
         self.GPSDO_SER.write(str.encode(com))
         response = str(self.GPSDO_SER.readline().decode("utf-8"))
@@ -142,7 +164,7 @@ class SpecGPSDO():
         response = str(self.GPSDO_SER.readline().decode("utf-8"))
         return response          
     
-    def readLine(self):
+    def _readLine(self):
         return str(self.GPSDO_SER.readline().decode("utf-8"))
      
     def sendQuery(self, query):         # method for querying GPSDO 
@@ -195,6 +217,7 @@ class SpecGPSDO():
         if response[:-2] == "0":
                 print("Tracking to PPSREF not set \n")
                 return False
+        return False
 
     def isSyncSet(self):
         response = self.collectResponse('SY?')
@@ -204,6 +227,7 @@ class SpecGPSDO():
         if response[:-2] == "0":
             print("PPSOUT synchronisation to PPSINT not set \n")
             return False
+        return False
      
     def getPPSPulseWidth(self):
          pulse_Length = self.collectResponse('PW?????????') 
@@ -218,30 +242,15 @@ class SpecGPSDO():
           self.collectResponse("BT0")
           self.collectResponse("MAW0B00")
           self.collectResponse("MAW0C00")
-          time.sleep(0.15)
-          response = self.readLine()
-          #response = self.readLine()
+          time.sleep(0.2)
+          response = self._readLine()
           if not response: break
         #print "Stopped Beating GPSDO Messages"
       
     def getGpsdoStatus(self):
          x= str(self.collectResponse('ST')[0:1])
-         return decodeGPSDOStatus(x)
-      
-    def decodeGPSDOStatus(self,x):
-      return {
-        '0' : "Warming Up",
-        '1' : "Tracking Set Up",
-        '2' : "Tracking PPS REF",
-        '3' : "Sync to PPS REF",
-        '4' : "Free Run",
-        '5' : "PPS REF Unstable",
-        '6' : "No PPS REF",
-        '7' : "Frozen",
-        '8' : "Factory Diagnostic",
-        '9' : "Searching RB Line...",
-        }[x]
-      
+         return _decodeGPSDOStatus(x)
+     
     def getGpsTime(self):
       return str(self.collectResponse('TD'))[0:8]
     
@@ -287,6 +296,7 @@ class SpecGPSDO():
       self.RawAdjVal = self.collectResponse('RA????')
       self.RawResponse = (self.collectResponse('FC??????'))
 
+    '''
     def getGpsData(self,flag):
       if (flag):
         self.setGpsCom(True)
@@ -297,7 +307,8 @@ class SpecGPSDO():
       elif(not flag):
         self.streamGps = False
         self.setGpsCom(False)
-     
+    '''
+    
     def pollGpsdoMetrics(self,flag):
       if flag:
           self.hasPolled = True
@@ -318,7 +329,7 @@ class SpecGPSDO():
       self.PPSMetrics = threading.currentThread()
       while (getattr(self.PPSMetrics, "do_run", True)):
         try:
-          response = self.readLine() 
+          response = self._readLine() 
           if (response[0:6] == "$PTNTA"):
             self.decodePTNTA(response)
           elif (response[0:6] == "$PTNTS"):
@@ -328,24 +339,16 @@ class SpecGPSDO():
         except Exception as e:
           pass
           #print str(e)
-        time.sleep(0.1)
+        time.sleep(0.2)
       #print "Stopping PPSMetricsPoller"
-    
-    def dateTimeToEpoch(self,dateTime):
-         p = '%Y%m%d%H%M%S'
-         epoch = datetime.datetime(1970, 1, 1)
-         #print "epoch :", epoch
-         epochTime = (datetime.datetime.strptime(dateTime,p) - epoch).total_seconds()
-         #print "epoch_Time :", epochTime
-         return epochTime
-      
-    
+
+
     def decodePTNTA(self, response):
        responseArray = response.split(",")
        
        #Date and time
        self.GpsDateTime = int(responseArray[1]);
-       newEpochTime = self.dateTimeToEpoch(responseArray[1])
+       newEpochTime = _dateTimeToEpoch(responseArray[1])
        if (((newEpochTime - self.epochGpsDateTime) != 1) and (self.firstQuery == False)):
           print("Error in date and time from GPSDO")
           print(newEpochTime - self.epochGpsDateTime)
@@ -372,7 +375,7 @@ class SpecGPSDO():
        self.FinePhaseComp = int(responseArray[5])
        
        #GPSDO Status
-       self.Status = self.decodeGPSDOStatus(str(responseArray[6]))
+       self.Status = _decodeGPSDOStatus(str(responseArray[6]))
        
        #GPS Vaalidity 
        validity = responseArray[8].split("*")
@@ -387,7 +390,7 @@ class SpecGPSDO():
        
     def decodePTNTS(self,response):
       responseArray = response.split(",") 
-      self.Status = self.decodeGPSDOStatus(str(responseArray[2]))
+      self.Status = _decodeGPSDOStatus(str(responseArray[2]))
       self.CurrentFreq = float.fromhex(responseArray[3])
       self.HoldoverFreq = float.fromhex(responseArray[4])
       if (responseArray[8] == "0"):

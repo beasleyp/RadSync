@@ -24,15 +24,15 @@ installer (found in setup.py)
 '''
 
 
-
-#Master Node Script
-
+import argparse
+import datetime
 from time import * # double check this
 import os
 import RPi.GPIO as GPIO
 import time
 import sys
-#from Tkinter import *
+
+from tkinter import *
 
 #Gui Rekated imports 
 import matplotlib
@@ -51,56 +51,24 @@ from . import grclok_1500
 from . import network_utils
 from . import main_ui_window
 
-# ************************** Setup **************************************
-
-# elevate python
-#pythonPID = os.getpid()
-#elevatePriority = "sudo renice -n -19 -p " + str(pythonPID)
-#os.system(elevatePriority)
-#elevate idle
 os.system('sudo renice -18 `pgrep idle`')
-
-# gpsd lifecycle managment
-os.system('clear') # not sure if all this is neccessary yet
-#os.system('sudo killall gpsd')
-#os.system('sudo gpsd /dev/ttyS0 -F /var/run/gpsd.sock')
-#os.system('sudo service ntp restart')
-# end of commands to reset the service
-
-
-
-
+os.system('clear') 
 # GPSDO presence flag
 GPSDO_Present = True
 
-# *********************End of Variables *********************************
 
 #*************Exit Routine****************
 def exit_routine(): # runs this routine upon exit
-    TCPServer.stopServer()
+    MainUi.gpsdo_textbox.insert(END,"****Exiting Program****\n")
+    MainUi.mGui.destroy() # close the window
+    #TCPServer.stopServer()
     GPSDO.pollGpsdoMetrics(False)
-    time.sleep(1)
-    exitFlag = 1
-    time.sleep(1)
-    DO_TextBox.insert(END,"****Exiting Program****\n")
-    mGui.destroy() # close the window
+    GPSDO.GPSDO_SER.close()
+    setup_file_to_save_gpsdo_metics(False)
     os._exit(1)
-    f.close()
-    mGui.protocol('WM_DELETE_WINDOW',exit_routine)
-
-def stopThread(self):
-  print("Shutting down thread: " + str(self))
-  if self.process is not None:
-    self.process.terminate()
-    self.process = None
-
-#***************END***********************
 
 
-  
-# ************* General Program Related Definitions **********************
-
-def setSysTime():
+def _set_system_time():
   global system_time_set_flag
   system_time_set_flag = False
   if (system_time_set_flag == False):
@@ -115,13 +83,6 @@ def setSysTime():
     except(Exception, e):
       print(str(e))
   
-# ************** End of General System Setup Related Definitions **************
-          
-
-# ******************** Network Related Definitions ***************************
-  
-# **************** End of Network Related Definitions *************************
-
 
 '''
 functions to deal with saving gpsdo metrics to file
@@ -133,65 +94,73 @@ def setup_file_to_save_gpsdo_metics(flag):
   if flag:
     print("Open file for saving GPSDO metrics")
     now = datetime.datetime.now()
-    file_name = "GPSDO_Log_Files/N0_GPSDO_Log " + now.strftime("%Y-%m-%d %H:%M:%S")+ ".txt"
+    file_name = "/home/pi/Desktop/GPSDO_Log_Files/N0_GPSDO_Log " + now.strftime("%Y-%m-%d %H:%M:%S")+ ".txt"
     gpsdo_metrics_file = open(file_name,"a")
     gpsdo_metrics_writer = csv.writer(gpsdo_metrics_file)
     gpsdo_metrics_writer.writerow(header)
   elif not flag:
     try:
-      f.close()
-      print('Closing for saving GPSDO metrics')
-    except(Exception,e):
+      gpsdo_metrics_file.close()
+      print('Closing file for saving GPSDO metrics')
+    except Exception as e:
       pass     
-      
+      epoch_date
 def save_gpsdo_metrics_to_file():
       global gpsdo_metrics_writer, gpsdo_metrics_file
       gpsdo_metrics_writer.writerow([GPSDO.GpsDateTime,GPSDO.epochGpsDateTime,GPSDO.Status,GPSDO.RbStatus,GPSDO.CurrentFreq,GPSDO.HoldoverFreq,GPSDO.ConstantMode,GPSDO.ConstantValue,GPSDO.Latitude,GPSDO.LatitudeLabel,GPSDO.Longitude,GPSDO.LongitudeLabel,GPSDO.Validity,GPSDO.FinePhaseComp,GPSDO.EffTimeInt,GPSDO.PPSRefSigma])
       
 
-       
+
+
+
+
+def parse_cmdline_args():
+    '''
+    passes the command line arguments to the scripts 
+    '''
+    parser = argparse.ArgumentParser(description='Program to control the UCL Radar Synchronisation System RadSync')
+    
+    parser.add_argument('node', action = 'store',
+                        help = 'Select enter the number of RadSync node: '
+                        '0 = master, 1,2 = slave', type = int)
+    
+    args = parser.parse_args()
+    
+    if args.node >2 or args.node<0:
+        parser.error("Please enter a valid node number either 0,1,2")
+    return args
+    
+
 # *********************** Program Begin ********************************
 def main():
+    '''
+    Entry point for RadSync Control Script.
+    '''
     global Trigger, MainUi, GPSDO
-    print("Entry point Success")
-    
-    
-    #Initialise Trigger
-    Trigger = trigger_control.Trigger() # Create trigger instance
+
+    args = parse_cmdline_args()
     
     # Start GPSDO service
     GPSDO = grclok_1500.SpecGPSDO(True) # Create GPSDO instance
     
-    #Initialsie Main UI window 
-    MainUi = main_ui_window.RadSyncUi()
+    if args.node == 0:
+        #Initialise Trigger
+        Trigger = trigger_control.Trigger() # Create trigger instance
+        MainUi = main_ui_window.RadSyncUi(args.node)
     
+    if args.node == 1:
+        #Initialise Trigger
+        Trigger = trigger_control.Trigger(args.node) # Create trigger instance
+        MainUi = main_ui_window.RadSyncUi()
+
     # Start UI main thread
     MainUi.setup_checkboxes() 
+    MainUi.mGui.protocol('WM_DELETE_WINDOW',exit_routine)
+    
+    #set RPI time to gps time - to delete when NTP server running
+    _set_system_time()
+    MainUi.set_poll_gpsdo(True)
+    
     MainUi.mGui.mainloop()    
-    
-
-'''    
-    
-    # Setup the GUI
-    mGui = Tk()
-    mGui.geometry("1900x1000+220+140") # Window Geometry
-    mGui.title("GPSDO Synchrnonisation System - Master Node Control Interface")
-    #mGui.configure(bg="skyblue")
-    LARGE_FONT= ("Verdana", 12)
-    style.use("ggplot")
-    # End of GUI setup 
-  
-  
-  
   
 
-
-Setup_CheckBox()
-setSysTime() #set OS time to GPS Time
-#clock() #Setup live clock on GUI
-mGui.after(1000, updateGpsdoMetrics)
-TCPServer = network_utils.RadSyncServer() #Create NetworkConnection Server
-mGui.mainloop() #End of program
-
-# *********************** Program End ********************************
-'''

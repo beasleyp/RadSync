@@ -74,19 +74,13 @@ class Trigger():
         self.Trigger_Pending = False
       self.realTimeCounter() # always query RTC
       
-    def setTriggerPending(self):
-      #print "set Trigger Pending"
-      main_script.MainUi.trigger_time_entry_box.configure(state=DISABLED) # Disable the entry box
-      try: 
-        self.Delay_Trigger_Sec = int(main_script.MainUi.user_trigger_delay_input.get()) # number of seconds in future to trigger
-      except Exception as e:
-        pass
-      if (self.Delay_Trigger_Sec < 10) or (self.Delay_Trigger_Sec == ""): #don't accept a trigger deadline less than 10s away.
-          main_script.MainUi.trigger_text_box.insert(END, "Minimum trigger delay is 10s;\nTrigger delay set to 10s; \n")
-          main_script.MainUi.trigger_text_box.yview(END)
-          self.Delay_Trigger_Sec = 10
-      self.calculatePulseDelay()
-      self.Trigger_Pending = True
+    def setTriggerPending(self,trigger_delay):
+        '''
+        public method that can receive a trigger request from UI or Arestor
+        '''
+        self.Delay_Trigger_Sec = trigger_delay # number of seconds in future to trigger
+        self.calculatePulseDelay()
+        self.Trigger_Pending = True
       
         
     def calculateTriggerTime(self):
