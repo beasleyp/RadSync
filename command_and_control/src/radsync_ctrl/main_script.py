@@ -114,10 +114,13 @@ def save_gpsdo_metrics_to_file():
 class sync_system_state():
     '''
     class and methods used to track the state of the synchrnoisation system
-        used by master and slave nodes to 
+        used by master and slave nodes
     '''    
     def __init__(self,this_node):
         if this_node == 0:
+            self.arestor_connected = False
+            self.node_1_connected = False
+            self.node_2_connected = False
             self.this_node_gps_quality = raddic.not_connected
             self.node_1_gps_quality = raddic.not_connected
             self.node_2_gps_quality = raddic.not_connected
@@ -163,7 +166,7 @@ def main():
     '''
     Entry point for RadSync Control Script.
     '''
-    global Trigger, MainUi, GPSDO
+    global Trigger, MainUi, GPSDO, System_tracker
 
     args = parse_cmdline_args()
     
@@ -172,12 +175,12 @@ def main():
     
     if args.node == 0:
         #Initialise Trigger
-        Trigger = trigger_control.Trigger() # Create trigger instance
+        Trigger = trigger_control.Trigger(args.node) # Create trigger instance
         MainUi = main_ui_window.RadSyncUi(args.node)
     
     if args.node == 1:
         #Initialise Trigger
-        Trigger = trigger_control.Trigger() # Create trigger instance
+        Trigger = trigger_control.Trigger(args.node) # Create trigger instance
         MainUi = main_ui_window.RadSyncUi(args.node)
 
     # Start UI main thread
@@ -187,6 +190,8 @@ def main():
     #set RPI time to gps time - to delete when NTP server running
     _set_system_time()
     MainUi.set_poll_gpsdo(True)
+    
+    System_tracker = sync_system_state()
     
     MainUi.mGui.mainloop()    
   

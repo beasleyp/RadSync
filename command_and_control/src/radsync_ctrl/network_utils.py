@@ -28,7 +28,11 @@ node_2_ip_address= "192.168.1.202"
 import socket 
 
 
-class RadSyncServer():
+class Slave_Client():
+
+
+
+class Master_Server():
  
    def __init__(self):
       self.slaveConnected = False

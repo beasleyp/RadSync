@@ -66,7 +66,7 @@ def arestor_decode_message(message):
        
     if message[0] == RadSync_master_trig_valid_prefix:
         '''
-        decode trigger acknowledgement from radsync master node
+        decode trigger validity message from radsync master node
         '''
         node_0_trig_validity = message[1]
         node_1_trig_validity = message[2]

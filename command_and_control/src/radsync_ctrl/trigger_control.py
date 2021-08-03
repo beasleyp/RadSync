@@ -26,6 +26,9 @@ import time
 from tkinter import *
 import datetime
 
+from . import radsync_network_interface as raddic
+
+
 class Trigger():
     #inialise class level static variables 
     Trigger_Pass = 31   # Trigger Pass Pulse Output Pin for Primary Trigger (RFSoC and BladeRF Trigger)
@@ -33,7 +36,7 @@ class Trigger():
     Sync_Pass = 29      # Trigger Pass Pulse Output Pin for Clock Divider Sync
     PPS_OUT = 15        # PPS_OUT from the GPSDO
   
-    def __init__(self):
+    def __init__(self,node):
       #initalise object level variables
       self.Trigger_Pending = False
       self.Epoch_Trigger_Deadline = -1 #set trigger deadline to -1; default before set
@@ -50,6 +53,7 @@ class Trigger():
       self.bladeradTrigg = True 
       self.freqdivTrigg = True
       self.triggId = 0;
+      self.node = node;
      
       #Setup Trigger IO Control 
       Low = GPIO.LOW
@@ -110,15 +114,17 @@ class Trigger():
          self.broadcastTrigger()
       
     def broadcastTrigger(self):
-        pass
         '''
-      if TCPServer.slaveConnected == True:
-        Message = "TR_" + str(self.epochGpsTriggerTime) + "_" + str(self.triggId)
-        TCPServer.broadcastMessage(Message)
-        NetworkTextBox.insert(END, "Trigger Time Broadcast \n")
-      else: 
-        NetworkTextBox.insert(END, "Trigger Time not Broadcast \n")
+        function to initiate broadcast of trigger request to slave nodes and 
+        send ack to Arestor if connected
         '''
+        if self.node == 0:
+            if main_script.System_tracker.node_1_connected == True or main_script.System_tracker.node_1_connected == True :
+                message = raddic.create_radsync_trig_req_message(self.epochGpsTriggerTime, self.triggId)
+                # send_to_slaves(message)
+                main_script.MainUi.network_text_box.insert(END, "Trigger Time Broadcast \n")
+            else:
+                 main_script.MainUi.network_text_box.insert(END, "Trigger Time not Broadcast \n")
       
       
     def triggerSelect(self):      
