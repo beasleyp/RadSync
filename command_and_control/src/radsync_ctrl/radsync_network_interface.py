@@ -20,8 +20,13 @@ Any changes to the comminication should be made to this document, NOT inside
 the command and control modules of either system. This will allow the interface
 to be easily updated without the requirement for updating multiple code bases.
 '''
+
+
+from . import main_script
+from . import trigger_control
+
     
-Delimiter = '-'
+Delimiter = '$'
 
 # Arestor message prefixes
 Arestor_trig_prefix = 'arest_trig_req'
@@ -105,7 +110,10 @@ def radsync_decode_message(message):
         trigger_id = message[2]
         print("Trigger request received from Master \n")
         print("Trigger type :" + str(trigger_id) + "  Unix trigger deadline :" + unix_trigger_deadline)
-        #TODO include call here to setup trigger in trigger module
+        
+        # initiate trigger in the trigger subsystem
+        main_script.handle_slave_trigger_request(unix_trigger_deadline,trigger_id)
+        
         
     
     if (message[0] == RadSync_slave_trig_ack_prefix):
@@ -168,7 +176,7 @@ def create_radsync_trig_req_message(unix_trigger_deadline, trigger_id):
     fucntion to create message to send to slave radsync nodes to request 
     trigger - only to be used by radsync
     '''
-    message = RadSync_master_trig_prefix + Delimiter + unix_trigger_deadline + Delimiter + trigger_id
+    message = RadSync_master_trig_prefix + Delimiter + str(int(unix_trigger_deadline)) + Delimiter + str(trigger_id)
     return message
 
 

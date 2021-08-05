@@ -26,6 +26,12 @@ import time
 from tkinter import *
 import datetime
 
+from . import radsync_network_interface as raddic
+
+
+
+
+
 class Trigger():
     #inialise class level static variables 
     Trigger_Pass = 31   # Trigger Pass Pulse Output Pin for Primary Trigger (RFSoC and BladeRF Trigger)
@@ -33,7 +39,7 @@ class Trigger():
     Sync_Pass = 29      # Trigger Pass Pulse Output Pin for Clock Divider Sync
     PPS_OUT = 15        # PPS_OUT from the GPSDO
   
-    def __init__(self):
+    def __init__(self,node):
       #initalise object level variables
       self.Trigger_Pending = False
       self.Epoch_Trigger_Deadline = -1 #set trigger deadline to -1; default before set
@@ -41,7 +47,7 @@ class Trigger():
       self.Pulse_Pre_Delay = 0 # set pulse pre delay to 0; default before set
       self.Window_Length = 1 #Trigger window length; default
       self.Delay_Trigger_Sec  = -1   
-      self.epochGpsTriggerTime = -1
+      self.unix_gps_trigger_deadline = -1
       # Trigger Variables 
       self.bladeradtriggState = 0
       self.rfsoctriggState = 0
@@ -50,6 +56,7 @@ class Trigger():
       self.bladeradTrigg = True 
       self.freqdivTrigg = True
       self.triggId = 0;
+      self.node = int(node);
      
       #Setup Trigger IO Control 
       Low = GPIO.LOW
@@ -83,10 +90,22 @@ class Trigger():
         self.Trigger_Pending = True
       
         
+    def setup_slave_trigger(self, unix_trigger_deadline, trig_id):
+      '''
+      function to accept trigger from master RadSync nope
+      entry point to trigger subsystem from network
+      '''
+      self.unix_gps_trigger_deadline  = unix_trigger_deadline
+      self.triggId = trig_id
+      print( "Unix Trigger Deadline", self.unix_gps_trigger_deadline) 
+      self.triggerSet()
+      self.calculatePulseDelay()
+      # create and send trigger ack back to master node 
+        
     def calculateTriggerTime(self):
       if (main_script.MainUi.is_polling_gpsdo == True):
-         self.epochGpsTriggerTime = main_script.GPSDO.epochGpsDateTime + self.Delay_Trigger_Sec
-         print( "GPS Trigger Deadline : ", self.epochGpsTriggerTime)
+         self.unix_gps_trigger_deadline = main_script.GPSDO.epochGpsDateTime + self.Delay_Trigger_Sec
+         print( "GPS Trigger Deadline : ", self.unix_gps_trigger_deadline )
          self.broadcastTrigger()
          
       if (main_script.MainUi.is_polling_gpsdo == False):
@@ -106,20 +125,26 @@ class Trigger():
          print("epoch_Time =", self.Epoch_Time)
          self.Epoch_Trigger_Deadline = self.Epoch_Time + self.Delay_Trigger_Sec #set trigger epoch time 
          print("Epoch Trigger Deadline", self.Epoch_Trigger_Deadline)
-         self.realTimeCounter()
+         #self.realTimeCounter()
          self.broadcastTrigger()
       
     def broadcastTrigger(self):
-        pass
         '''
-      if TCPServer.slaveConnected == True:
-        Message = "TR_" + str(self.epochGpsTriggerTime) + "_" + str(self.triggId)
-        TCPServer.broadcastMessage(Message)
-        NetworkTextBox.insert(END, "Trigger Time Broadcast \n")
-      else: 
-        NetworkTextBox.insert(END, "Trigger Time not Broadcast \n")
+        function to initiate broadcast of trigger request to slave nodes and 
+        send ack to Arestor if connected
         '''
-      
+        if self.node == 0:
+            print('broadcast trigger')
+            message = raddic.create_radsync_trig_req_message(self.unix_gps_trigger_deadline , self.triggId)
+            main_script.Server.broadcast_to_slaves(message)
+            '''
+            if main_script.System_tracker.node_1_connected == True or main_script.System_tracker.node_1_connected == True :
+               
+                # send_to_slaves(message)
+                main_script.MainUi.network_text_box.insert(END, "Trigger Time Broadcast \n")
+            else:
+                 main_script.MainUi.network_text_box.insert(END, "Trigger Time not Broadcast \n")
+            '''
       
     def triggerSelect(self):      
       #Query UI trigger check boxes
@@ -159,13 +184,13 @@ class Trigger():
       #print "completed calc"
       
     def realTimeCounter(self):
-      if self.epochGpsTriggerTime != -1: #only clock RTC if there is a trigger time set.
-         delta = self.epochGpsTriggerTime - main_script.GPSDO.epochGpsDateTime
+      if self.unix_gps_trigger_deadline != -1: #only clock RTC if there is a trigger time set.
+         delta = self.unix_gps_trigger_deadline - main_script.GPSDO.epochGpsDateTime
          main_script.MainUi.trigger_countdown_text.set("Time until Trigger: " + str(delta))
          if (delta == 1):
             GPIO.remove_event_detect(Trigger.PPS_OUT)
             self.sendTrigger() 
-            self.epochGpsTriggerTime = -1 # reset the epoch trigger deadline
+            self.unix_gps_trigger_deadline = -1 # reset the epoch trigger deadline
             GPIO.add_event_detect(Trigger.PPS_OUT, GPIO.RISING, callback= self.ppsDetected)
       if self.Epoch_Trigger_Deadline != -1: #only clock RTC if there is a trigger time set.
         self.Epoch_Time += 1 # increment epoch time each time the RTC is clocked.
@@ -200,12 +225,12 @@ class Trigger():
           GPIO.output(Trigger.Sync_Pass, Low) # ensure the pass pulse has gone low
           GPIO.output(Trigger.Sync_Pass, Low)
           GPIO.output(Trigger.Sync_Pass, Low)
-          if ((main_script.GPSDO.epochGpsDateTime - self.epochGpsTriggerTime) == 0):
+          if ((main_script.GPSDO.epochGpsDateTime - self.unix_gps_trigger_deadline ) == 0):
             main_script.MainUi.trigger_text_box.insert(END, 'N0 Trigger Valid \n')
             print("time: ", main_script.GPSDO.epochGpsDateTime)
-            print("trigg time: " ,self.epochGpsTriggerTime)
+            print("trigg time: " ,self.unix_gps_trigger_deadline )
           else:
-            main_script.MainUi.trigger_text_box.insert(END, 'Trigger Error of ' + str(int(main_script.GPSDO.epochGpsDateTime - self.epochGpsTriggerTime)) + ' s \n')     
+            main_script.MainUi.trigger_text_box.insert(END, 'Trigger Error of ' + str(int(main_script.GPSDO.epochGpsDateTime - self.unix_gps_trigger_deadline )) + ' s \n')     
           main_script.MainUi.trigger_countdown_text.set("Time until Trigger: Nil") # reset the trigger label
           main_script.MainUi.trigger_time_entry_box.configure(state=NORMAL)
       except Exception as e:

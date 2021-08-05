@@ -6,7 +6,7 @@ src/radsync_ctrl/grclok_1500_popout.py
 src/radsync_ctrl/main_script.py
 src/radsync_ctrl/main_ui_window.py
 src/radsync_ctrl/network_utils.py
-src/radsync_ctrl/radsync_network_api.py
+src/radsync_ctrl/radsync_network_interface.py
 src/radsync_ctrl/trigger_control.py
 src/radsync_ctrl.egg-info/PKG-INFO
 src/radsync_ctrl.egg-info/SOURCES.txt

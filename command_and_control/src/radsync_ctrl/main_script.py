@@ -58,6 +58,18 @@ os.system('clear')
 GPSDO_Present = True
 
 
+
+def handle_slave_trigger_request(unix_trigger_deadline,trigger_id):
+    # senf request to trigger module
+    Trigger.setup_slave_trigger(unix_trigger_deadline,trigger_id)
+    # send response to master node with gps validity
+    message =  raddic.create_radsync_trig_ack_message(System_tracker.this_node, System_tracker.get_node_gps_state())
+    Client.send_message(message)
+
+
+
+
+
 #*************Exit Routine****************
 def exit_routine(): # runs this routine upon exit
     MainUi.gpsdo_textbox.insert(END,"****Exiting Program****\n")
@@ -113,11 +125,12 @@ def save_gpsdo_metrics_to_file():
 
 class sync_system_state():
     '''
-    class and methods used to track the state of the synchrnoisation system
+    class and methods used to track the stateself.this_node_gps_quality  of the synchrnoisation system
         used by master and slave nodes
     '''    
-    def __init__(self,this_node):
-        if this_node == 0:
+    def __init__(self, node):
+        self.this_node = node
+        if self.this_node == 0:
             self.arestor_connected = False
             self.node_1_connected = False
             self.node_2_connected = False
@@ -131,7 +144,7 @@ class sync_system_state():
             self.this_node_gps_quality = raddic.not_connected
             self.this_node_trig_validity = raddic.not_connected
     
-    def get_node_gps_state():
+    def get_node_gps_state(self):
         if GPSDO.Status == "Sync to PPS REF":
             pps_error = int(GPSDO.FinePhaseComp)
             if pps_error < 10:
@@ -142,7 +155,7 @@ class sync_system_state():
                  self.this_node_gps_quality = raddic.poor_gps_sync
         else:
             self.this_node_gps_quality = GPSDO.Status
-    
+        return self.this_node_gps_quality 
     
 def parse_cmdline_args():
     '''
@@ -166,7 +179,7 @@ def main():
     '''
     Entry point for RadSync Control Script.
     '''
-    global Trigger, MainUi, GPSDO, System_tracker
+    global Trigger, MainUi, GPSDO, System_tracker, Server, Client
 
     args = parse_cmdline_args()
     
@@ -177,11 +190,18 @@ def main():
         #Initialise Trigger
         Trigger = trigger_control.Trigger(args.node) # Create trigger instance
         MainUi = main_ui_window.RadSyncUi(args.node)
+        
+        # Start server to serve connections to RadSyn Slaves and Arestor clients 
+        Server = network_utils.MasterRadSyncServer()
+        Server.start_server()
     
     if args.node == 1:
         #Initialise Trigger
         Trigger = trigger_control.Trigger(args.node) # Create trigger instance
         MainUi = main_ui_window.RadSyncUi(args.node)
+        
+        Client = network_utils.SlaveRadSyncClient()
+        Client.start_client()
 
     # Start UI main thread
     MainUi.setup_checkboxes() 
@@ -191,8 +211,9 @@ def main():
     _set_system_time()
     MainUi.set_poll_gpsdo(True)
     
-    System_tracker = sync_system_state()
+    System_tracker = sync_system_state(args.node)
     
-    MainUi.mGui.mainloop()    
-  
+     
 
+    
+    MainUi.mGui.mainloop()   
