@@ -99,7 +99,7 @@ def radsync_decode_message(message):
         trigger_delay = message[2]
         print("Trigger request received from Arestor \n")
         print("Trigger type :" + trigger_type + "  Trigger Delay :" + trigger_delay)
-        #TODO include call here to send trigger request to trigger module
+        main_script.handle_arestor_trigger_request(trigger_type,trigger_delay)
     
  
     if (message[0] == RadSync_master_trig_prefix):
@@ -123,7 +123,7 @@ def radsync_decode_message(message):
         node_number = message[1]
         gps_sync_state = message[2]
         print("Trigger Ack from Node " + str(node_number) + " : " + gps_sync_state)
-    
+        main_script.handle_slave_trigger_ack(node_number,gps_sync_state)
     
     if (message[0] == RadSync_slave_trig_valid_prefix):
         '''
@@ -132,7 +132,7 @@ def radsync_decode_message(message):
         node_number = message[1]
         trigger_validity = message[2]
         print("Trigger validity from Node " + str(node_number) + " : " + trigger_validity) 
-        
+        main_script.handle_slave_trigger_validity(node_number,trigger_validity)
   
 
 
