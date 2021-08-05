@@ -57,37 +57,57 @@ os.system('clear')
 # GPSDO presence flag
 GPSDO_Present = True
 
-
+'''
+handles for netwrk interface 
+'''
 
 def handle_slave_trigger_request(unix_trigger_deadline,trigger_id):
-    # senf request to trigger module
+    '''
+    function ran when a slave node recevies a trigger request from the master node
+    '''
+    # request trigger from trigger module
     Trigger.setup_slave_trigger(unix_trigger_deadline,trigger_id)
     # send response to master node with gps validity
     message =  raddic.create_radsync_trig_ack_message(System_tracker.this_node, System_tracker.get_node_gps_state())
     Client.send_message(message)
 
 def handle_slave_trigger_ack(node_number,gps_sync_state):
+    '''
+    function ran when master node received triger ack from slave 
     
+    '''
     if int(node_number) == 1:
         #set node validity in system tracker 
         System_tracker.node_1_gps_quality = gps_sync_state
-        # node 2 is disconnected or we have recieved its gps validity already and arestor is connected. message arestor trigger ack
-        
+        #If node 2 is disconnected, or we have recieved its gps validity already, and arestor is connected send arestor trigger ack
         if ((System_tracker.node_2_connected == False) or (System_tracker.node_2_gps_quality != raddic.not_connected)) and (System_tracker.arestor_connected):
             send_arestor_trigger_ack()
             
     if int(node_number) == 2:
         System_tracker.node_2_gps_quality = gps_sync_state
+        #If node 1 is disconnected, or we have recieved its gps validity already, and arestor is connected send arestor trigger ack
         if ((System_tracker.node_1_connected == False) or (System_tracker.node_1_gps_quality != raddic.not_connected)) and System_tracker.arestor_connected:
-            send_arestor_trigger_ack()
-    
+            send_arestor_trigger_ack()  
     
 def send_arestor_trigger_ack():
-    message = raddic.create_arestor_trig_req_response(str(Trigger.unix_gps_trigger_deadline), System_tracker.this_node_gps_quality, System_tracker.node_1_gps_quality, System_tracker.node_2_gps_quality)
+    message = raddic.create_arestor_trig_req_response(str(Trigger.unix_gps_trigger_deadline), System_tracker.get_node_gps_state, System_tracker.node_1_gps_quality, System_tracker.node_2_gps_quality)
     Server.send_to_arestor(message)
         
 def handle_arestor_trigger_request(trigger_type,trigger_delay):
     pass
+
+
+def handle_slave_trigger_validity(node_number,trigger_validity):
+    if int(node_number) == 1: 
+        System_tracker.node_1_trig_validity = trigger_validity
+    if int(node_number) == 2:
+        System_tracker.node_2_trig_validity = trigger_validity
+
+
+
+
+
+
 
 
 #*************Exit Routine****************
@@ -145,7 +165,7 @@ def save_gpsdo_metrics_to_file():
 
 class sync_system_state():
     '''
-    class and methods used to track the stateself.this_node_gps_quality  of the synchrnoisation system
+    class and methods used to track the state of the synchrnisation system
         used by master and slave nodes
     '''    
     def __init__(self, node):
@@ -176,6 +196,14 @@ class sync_system_state():
         else:
             self.this_node_gps_quality = GPSDO.Status
         return self.this_node_gps_quality 
+    
+    def reset_states(self):
+            self.this_node_gps_quality = raddic.not_connected
+            self.node_1_gps_quality = raddic.not_connected
+            self.node_2_gps_quality = raddic.not_connected
+            self.this_node_trig_validity = raddic.not_connected
+            self.node_1_trig_validity = raddic.not_connected
+            self.node_2_trig_validity = raddic.not_connected
     
 def parse_cmdline_args():
     '''

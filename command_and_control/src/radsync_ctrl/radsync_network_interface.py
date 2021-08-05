@@ -93,7 +93,7 @@ def radsync_decode_message(message):
 
     if (message[0] == Arestor_trig_prefix):
         '''
-        ddecode trigger request from arestor 
+        decode trigger request from arestor 
         '''
         trigger_type = message[1]
         trigger_delay = message[2]
@@ -190,7 +190,7 @@ def create_radsync_trig_ack_message(node_number, gps_sync_state):
     fucntion to create message to send to master radsync nodes with trigger 
     validity - only to be used by radsync.
     '''
-    message = RadSync_slave_trig_valid_prefix + Delimiter + node_number + Delimiter + gps_sync_state
+    message = RadSync_slave_trig_ack_prefix + Delimiter + node_number + Delimiter + gps_sync_state
     return message
 
 def create_radsync_trig_validity_message(node_number, trigger_validity):
