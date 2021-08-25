@@ -118,6 +118,7 @@ def exit_routine(): # runs this routine upon exit
     GPSDO.pollGpsdoMetrics(False)
     GPSDO.GPSDO_SER.close()
     setup_file_to_save_gpsdo_metics(False)
+    Server.stop_server()
     os._exit(1)
 
 
@@ -238,6 +239,7 @@ def main():
         #Initialise Trigger
         Trigger = trigger_control.Trigger(args.node) # Create trigger instance
         MainUi = main_ui_window.RadSyncUi(args.node)
+        time.sleep(5)
         
         # Start server to serve connections to RadSyn Slaves and Arestor clients 
         Server = network_utils.MasterRadSyncServer()
@@ -247,7 +249,7 @@ def main():
         #Initialise Trigger
         Trigger = trigger_control.Trigger(args.node) # Create trigger instance
         MainUi = main_ui_window.RadSyncUi(args.node)
-        
+        time.sleep(5)
         Client = network_utils.SlaveRadSyncClient()
         Client.start_client()
 

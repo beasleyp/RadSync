@@ -31,8 +31,10 @@ BUFFER_SIZE = 1024
 import socket
 import threading 
 import time
+from tkinter import *
 
 from . import radsync_network_interface
+from . import main_script
 
 
 '''
@@ -66,9 +68,11 @@ class SlaveRadSyncClient():
                 try:
                      self.client_socket.connect((NODE_0_IP_ADDRESS, SERVER_PORT)) #connect to server 
                      print('Connected to Node 0 \n')
+                     main_script.MainUi.network_text_box.insert(END, 'Connected to Node 0 \n')
                      break
                 except Exception as e:
                      print('Connection to Node 0 failed\n')
+                     main_script.MainUi.network_text_box.insert(END, 'Connection to Node 0 failed \n')
                      time.sleep(1)
                      continue
             
@@ -140,6 +144,7 @@ class MasterRadSyncServer():
         else:
             print('Arestor is not connected')
             
+            
         
     def _setup_server_thread(self):
       global ARESTOR_CONNECTED,N1_CONNECTED,N2_CONNECTED
@@ -166,6 +171,7 @@ class MasterRadSyncServer():
                  if (addr[0] == NODE_1_IP_ADDRESS):
                    self.radsync_node_1_con = con
                    print('RadSync Node 1 Connected')
+                   main_script.MainUi.network_text_box.insert(END, 'RadSync Node 1 Connected \n')
                    name = 'RadSync Node 1'
                    self.node1_thread = threading.Thread(target=_handle_client, args=(self.radsync_node_1_con, addr, name))
                    N1_CONNECTED = True
@@ -174,6 +180,7 @@ class MasterRadSyncServer():
                  elif (addr[0] == NODE_2_IP_ADDRESS):
                    self.radsync_node_2_con = con
                    print('RadSync Node 2 Connected')
+                   main_script.MainUi.network_text_box.insert(END, 'RadSync Node 2 Connected \n')
                    name = 'RadSync Node 2'
                    self.node2_thread = threading.Thread(target=_handle_client, args=(self.radsync_node_2_con, addr, name))
                    N2_CONNECTED = True
@@ -182,6 +189,7 @@ class MasterRadSyncServer():
                  else:
                    self.arestor_con = con
                    print('Arestor Command and Control Connected')
+                   main_script.MainUi.network_text_box.insert(END, 'Arestor Command and Control Connected \n')
                    name = 'Arestor'
                    self.arestor_thread = threading.Thread(target=_handle_client, args=(self.arestor_con, addr, name))
                    ARESTOR_CONNECTED = True
@@ -202,6 +210,8 @@ def _handle_client(con, addr, name):
         message = con.recv(BUFFER_SIZE)
         if (not message or message.decode() == EXIT_FLAG):
             print (name, ' Disconnected')
+            
+            main_script.MainUi.network_text_box.insert(END, str(name + ' Disconnected \n'))
             if name == 'arestor':
                 ARESTOR_CONNECTED = False
             if name == 'RadSync Node 1':
