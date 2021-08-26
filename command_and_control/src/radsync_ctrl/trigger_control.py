@@ -238,7 +238,7 @@ class Trigger():
           else:
             main_script.MainUi.trigger_text_box.insert(END, 'Trigger Error of ' + str(int(main_script.GPSDO.epochGpsDateTime - self.unix_gps_trigger_deadline )) + ' s \n')     
             self._broadcast_trigger_validity(False)
-            main_script.MainUi.trigger_countdown_text.set("Time until Trigger: Nil") # reset the trigger label
+          main_script.MainUi.trigger_countdown_text.set("Time until Trigger: Nil") # reset the trigger label
           main_script.MainUi.trigger_time_entry_box.configure(state=NORMAL)
           
           
@@ -251,12 +251,12 @@ class Trigger():
             #pause to ensute all other nodes reponses are received
             time.sleep(2)
             #send validity message to the Arestor System
-            raddic.create_arestor_trig_validity_message(this_node_validity,System_tracker.node_1_trig_validity,System_tracker.node_2_trig_validity)
+            message = raddic.create_arestor_trig_validity_message(str(this_node_validity),main_script.System_tracker.node_1_trig_validity,main_script.System_tracker.node_2_trig_validity)
             main_script.Server.send_to_arestor(message)
             #reset trigger states
             main_script.System_tracker.reset_states()
             
         else:
             #send validity message to master node
-            message = raddic.create_radsync_trig_validity_message(self.node, this_node_validity)
+            message = raddic.create_radsync_trig_validity_message(self.node, str(this_node_validity))
             main_script.Client.send_message(message)
