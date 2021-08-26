@@ -68,11 +68,11 @@ class SlaveRadSyncClient():
                 try:
                      self.client_socket.connect((NODE_0_IP_ADDRESS, SERVER_PORT)) #connect to server 
                      print('Connected to Node 0 \n')
-                     main_script.MainUi.network_text_box.insert(END, 'Connected to Node 0 \n')
+                     #main_script.MainUi.network_text_box.insert(END, 'Connected to Node 0 \n') # can't change tk out of main thread
                      break
                 except Exception as e:
                      print('Connection to Node 0 failed\n')
-                     main_script.MainUi.network_text_box.insert(END, 'Connection to Node 0 failed \n')
+                     #main_script.MainUi.network_text_box.insert(END, 'Connection to Node 0 failed \n')
                      time.sleep(1)
                      continue
             

@@ -146,7 +146,7 @@ def create_arestor_trig_req_message(trigger_type, trigger_delay):
     '''
     function to create arestor trigger request message - only to be used by arestor command and cotrol script
     '''
-    message = Arestor_trig_prefix + Delimiter + trigger_type + Delimiter + trigger_delay
+    message = Arestor_trig_prefix + Delimiter + str(trigger_type) + Delimiter + str(trigger_delay)
     return message
 
 
@@ -160,7 +160,7 @@ def create_arestor_trig_req_response(unix_trigger_deadline, node_0_gps_quality, 
     used by RadSync
     prefix-node_0_gps_quality-node_1_gps_quality-node_2_gps_quality
     '''
-    message = RadSync_master_trig_ack_prefix + Delimiter + unix_trigger_deadline + Delimiter + node_0_gps_quality + node_1_gps_quality + node_2_gps_quality
+    message = RadSync_master_trig_ack_prefix + Delimiter + str(unix_trigger_deadline) + Delimiter + str(node_0_gps_quality)+ str(node_1_gps_quality) + str(node_2_gps_quality)
     return message 
 
 def create_arestor_trig_validity_message(node_0_trig_validity, node_1_trig_validity, node_2_trig_validity):
@@ -168,7 +168,7 @@ def create_arestor_trig_validity_message(node_0_trig_validity, node_1_trig_valid
     fucntion to create message to send to arestor with each nodes trigger 
     validity - only to be used by radsync
     '''
-    message = RadSync_master_trig_valid_prefix + Delimiter + node_0_trig_validity + Delimiter + node_1_trig_validity + Delimiter + node_2_trig_validity
+    message = RadSync_master_trig_valid_prefix + Delimiter + str(node_0_trig_validity) + Delimiter + str(node_1_trig_validity) + Delimiter + str(node_2_trig_validity)
     return message
     
 def create_radsync_trig_req_message(unix_trigger_deadline, trigger_id):
@@ -190,7 +190,7 @@ def create_radsync_trig_ack_message(node_number, gps_sync_state):
     fucntion to create message to send to master radsync nodes with trigger 
     validity - only to be used by radsync.
     '''
-    message = RadSync_slave_trig_ack_prefix + Delimiter + node_number + Delimiter + gps_sync_state
+    message = RadSync_slave_trig_ack_prefix + Delimiter + str(node_number) + Delimiter + str(gps_sync_state)
     return message
 
 def create_radsync_trig_validity_message(node_number, trigger_validity):
@@ -198,5 +198,5 @@ def create_radsync_trig_validity_message(node_number, trigger_validity):
     fucntion to create message to send to master radsync nodes with trigger 
     validity - only to be used by radsync.
     '''
-    message = RadSync_slave_trig_valid_prefix + Delimiter + node_number + Delimiter + trigger_validity
+    message = RadSync_slave_trig_valid_prefix + Delimiter + str(node_number) + Delimiter + str(trigger_validity)
     return message
