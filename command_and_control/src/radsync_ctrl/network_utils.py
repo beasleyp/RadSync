@@ -130,6 +130,7 @@ class MasterRadSyncServer():
     def broadcast_to_slaves(self,message):
         global N1_CONNECTED, N2_CONNECTED
         if N1_CONNECTED:
+            
             message = str.encode(message)
             self.radsync_node_1_con.sendall(message)
         if N2_CONNECTED:

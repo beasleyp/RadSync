@@ -130,6 +130,7 @@ class MasterRadSyncServer():
     def broadcast_to_slaves(self,message):
         global N1_CONNECTED, N2_CONNECTED
         if N1_CONNECTED:
+            
             message = str.encode(message)
             self.radsync_node_1_con.sendall(message)
         if N2_CONNECTED:
@@ -211,7 +212,7 @@ def _handle_client(con, addr, name):
         if (not message or message.decode() == EXIT_FLAG):
             print (name, ' Disconnected')
             
-            main_script.MainUi.network_text_box.insert(END, str(name + ' Disconnected'))
+            main_script.MainUi.network_text_box.insert(END, str(name + ' Disconnected \n'))
             if name == 'arestor':
                 ARESTOR_CONNECTED = False
             if name == 'RadSync Node 1':
