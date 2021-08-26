@@ -112,6 +112,7 @@ def handle_slave_trigger_validity(node_number,trigger_validity):
 
 #*************Exit Routine****************
 def exit_routine(): # runs this routine upon exit
+    global Server
     MainUi.gpsdo_textbox.insert(END,"****Exiting Program****\n")
     MainUi.mGui.destroy() # close the window
     #TCPServer.stopServer()

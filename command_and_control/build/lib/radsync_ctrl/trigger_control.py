@@ -239,9 +239,8 @@ class Trigger():
             main_script.MainUi.trigger_text_box.insert(END, 'Trigger Error of ' + str(int(main_script.GPSDO.epochGpsDateTime - self.unix_gps_trigger_deadline )) + ' s \n')     
             self._broadcast_trigger_validity(False)
           main_script.MainUi.trigger_countdown_text.set("Time until Trigger: Nil") # reset the trigger label
-          main_script.MainUi.trigger_time_entry_box.configure(state=NORMAL)
-          
-          
+          if self.node == 0:
+            main_script.MainUi.trigger_time_entry_box.configure(state=NORMAL)
       except Exception as e:
           print(str(e))
           os._exit(1)
