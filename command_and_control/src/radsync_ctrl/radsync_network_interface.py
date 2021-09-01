@@ -99,7 +99,11 @@ def radsync_decode_message(message):
         trigger_delay = message[2]
         print("Trigger request received from Arestor \n")
         print("Trigger type :" + trigger_type + "  Trigger Delay :" + trigger_delay)
-        main_script.handle_arestor_trigger_request(trigger_type,trigger_delay)
+        if trigger_type == 'radar':
+            trigger_type = 3 #1
+        if trigger_type == 'freq':
+            trigger_type = 4
+        main_script.handle_arestor_trigger_request(int(trigger_type),float(trigger_delay))
     
  
     if (message[0] == RadSync_master_trig_prefix):
@@ -156,7 +160,7 @@ Functions to be used by the RADSYNC MASTER node to encode
 
 def create_arestor_trig_req_response(unix_trigger_deadline, node_0_gps_quality, node_1_gps_quality=not_connected, node_2_gps_quality=not_connected):
     '''
-    fucntion to create response message to send to arestor - only to be 
+    function to create response message to send to arestor - only to be 
     used by RadSync
     prefix-node_0_gps_quality-node_1_gps_quality-node_2_gps_quality
     '''

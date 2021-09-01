@@ -142,6 +142,10 @@ class Trigger():
             print('broadcast trigger')
             message = raddic.create_radsync_trig_req_message(self.unix_gps_trigger_deadline , self.triggId)
             main_script.Server.broadcast_to_slaves(message)
+            
+            if main_script.System_tracker.arestor_connected:
+                message = raddic.create_arestor_trig_req_response(self.unix_gps_trigger_deadline, main_script.System_tracker.get_node_gps_state, main_script.System_tracker.node_1_gps_quality, main_script.System_tracker.node_2_gps_quality)
+                main_script.Server.send_to_arestor(message)
             '''
             if main_script.System_tracker.node_1_connected == True or main_script.System_tracker.node_1_connected == True :
                
@@ -181,7 +185,37 @@ class Trigger():
         self.triggId = 6
       elif (self.freqdivTrigg == True and self.bladeradTrigg == True and self.rfsocTrigg == True) :
         self.triggId = 7
-      
+    
+    def set_trigger_type(self):   
+      if self.triggId  == 1:
+        self.freqdivTrigg = False 
+        self.bladeradTrigg = False 
+        self.rfsocTrigg = True
+      elif self.triggId == 2:
+        self.freqdivTrigg = False 
+        self.bladeradTrigg = True
+        self.rfsocTrigg = False
+      elif self.triggId  == 3:
+        self.freqdivTrigg = False
+        self.bladeradTrigg = True 
+        self.rfsocTrigg = True
+      elif self.triggId  == 4:
+        self.freqdivTrigg = True 
+        self.bladeradTrigg = False 
+        self.rfsocTrigg = False 
+      elif self.triggId  == 5:
+        self.freqdivTrigg = True 
+        self.bladeradTrigg = False 
+        self.rfsocTrigg = True
+      elif self.triggId  == 6:
+        self.freqdivTrigg = True
+        self.bladeradTrigg = True 
+        self.rfsocTrigg = False
+      elif self.triggId == 7:
+        self.freqdivTrigg = True
+        self.bladeradTrigg = True 
+        self.rfsocTrigg = True
+    
     def calculatePulseDelay(self):
       #print "calc pre pulse"
       self.Pulse_Pre_Delay = 1 + 0.5*main_script.GPSDO.PPSPulseWidth*0.000000001 - 0.5*self.Window_Length

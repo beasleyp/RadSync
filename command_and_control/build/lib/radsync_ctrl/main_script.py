@@ -94,7 +94,18 @@ def send_arestor_trigger_ack():
     Server.send_to_arestor(message)
         
 def handle_arestor_trigger_request(trigger_type,trigger_delay):
-    pass
+    '''
+    function ran when master node received triger req from Arestor 
+    
+    '''
+    # set the trigger type to that requested by 
+    Trigger.triggId = int(trigger_type)
+    # update the trigger selection
+    Trigger.set_trigger_type()
+    # setup a trigger in the trigger subsystem
+    Trigger.setTriggerPending(trigger_delay)
+    
+    #
 
 
 def handle_slave_trigger_validity(node_number,trigger_validity):

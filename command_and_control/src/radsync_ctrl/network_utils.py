@@ -222,7 +222,7 @@ def _handle_client(con, addr, name):
             break
         message = message.decode()  
         radsync_network_interface.radsync_decode_message(message)
-        print(message)
+        #print(message)
         time.sleep(1)            
               
      
