@@ -221,7 +221,6 @@ def _handle_client(con, addr, name):
                 N2_CONNECTED = False
             break
         message = message.decode()  
-        print(message)
         radsync_network_interface.radsync_decode_message(message)
         print(message)
         time.sleep(1)            

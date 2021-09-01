@@ -439,7 +439,7 @@ class RadSyncUi():
         graph_frame.grid(row=2,column=0,columnspan=3,pady=10,padx=10)
         fpc_canvas = FigureCanvasTkAgg(fpc_figure,graph_frame)
         fpc_canvas.get_tk_widget().grid(row=0,column=0,sticky=W,pady=10,padx=10)
-        ani = animation.FuncAnimation(fpc_figure, self.animate, interval=1000)
+        #ani = animation.FuncAnimation(fpc_figure, self.animate, interval=1000)
         fpc_canvas.draw()
         # End of figures
         
@@ -583,6 +583,6 @@ class RadSyncUi():
         graph_frame.grid(row=2,column=0,columnspan=3,pady=10,padx=10)
         fpc_canvas = FigureCanvasTkAgg(fpc_figure,graph_frame)
         fpc_canvas.get_tk_widget().grid(row=0,column=0,sticky=W,pady=10,padx=10)
-        ani = animation.FuncAnimation(fpc_figure, self.animate, interval=1000)
+        #ani = animation.FuncAnimation(fpc_figure, self.animate, interval=1000)
         fpc_canvas.draw()
         # End of figures        

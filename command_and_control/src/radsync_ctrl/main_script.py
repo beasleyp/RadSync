@@ -68,7 +68,7 @@ def handle_slave_trigger_request(unix_trigger_deadline,trigger_id):
     # request trigger from trigger module
     Trigger.setup_slave_trigger(unix_trigger_deadline,trigger_id)
     # send response to master node with gps validity
-    message =  raddic.create_radsync_trig_ack_message(System_tracker.this_node, System_tracker.get_node_gps_state())
+    message =  raddic.create_radsync_trig_ack_message(str(System_tracker.this_node), System_tracker.get_node_gps_state())
     Client.send_message(message)
 
 def handle_slave_trigger_ack(node_number,gps_sync_state):
@@ -112,6 +112,7 @@ def handle_slave_trigger_validity(node_number,trigger_validity):
 
 #*************Exit Routine****************
 def exit_routine(): # runs this routine upon exit
+    global Server
     MainUi.gpsdo_textbox.insert(END,"****Exiting Program****\n")
     MainUi.mGui.destroy() # close the window
     #TCPServer.stopServer()
