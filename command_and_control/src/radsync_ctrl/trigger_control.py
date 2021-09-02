@@ -142,11 +142,12 @@ class Trigger():
             print('broadcast trigger')
             message = raddic.create_radsync_trig_req_message(self.unix_gps_trigger_deadline , self.triggId)
             main_script.Server.broadcast_to_slaves(message)
-            
-            if main_script.System_tracker.arestor_connected:
-                message = raddic.create_arestor_trig_req_response(self.unix_gps_trigger_deadline, main_script.System_tracker.get_node_gps_state, main_script.System_tracker.node_1_gps_quality, main_script.System_tracker.node_2_gps_quality)
-                main_script.Server.send_to_arestor(message)
             '''
+            time.sleep(5)
+            if main_script.System_tracker.arestor_connected:
+                message = raddic.create_arestor_trig_req_response(self.unix_gps_trigger_deadline, main_script.System_tracker.get_node_gps_state(), main_script.System_tracker.node_1_gps_quality, main_script.System_tracker.node_2_gps_quality)
+                main_script.Server.send_to_arestor(message)
+            
             if main_script.System_tracker.node_1_connected == True or main_script.System_tracker.node_1_connected == True :
                
                 # send_to_slaves(message)
@@ -286,6 +287,7 @@ class Trigger():
             #send validity message to the Arestor System
             message = raddic.create_arestor_trig_validity_message(this_node_validity,main_script.System_tracker.node_1_trig_validity,main_script.System_tracker.node_2_trig_validity)
             main_script.Server.send_to_arestor(message)
+            main_script.Server.disconnect_from_arestor()
             #reset trigger states
             main_script.System_tracker.reset_states()
             
