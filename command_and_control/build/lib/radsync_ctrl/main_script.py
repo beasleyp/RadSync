@@ -58,7 +58,7 @@ os.system('clear')
 GPSDO_Present = True
 
 '''
-handles for netwrk interface 
+handles for network interface 
 '''
 
 def handle_slave_trigger_request(unix_trigger_deadline,trigger_id):
@@ -74,10 +74,11 @@ def handle_slave_trigger_request(unix_trigger_deadline,trigger_id):
 def handle_slave_trigger_ack(node_number,gps_sync_state):
     '''
     function ran when master node received triger ack from slave 
-    
     '''
+    
     if int(node_number) == 1:
         #set node validity in system tracker 
+        print(gps_sync_state)
         System_tracker.node_1_gps_quality = gps_sync_state
         #If node 2 is disconnected, or we have recieved its gps validity already, and arestor is connected send arestor trigger ack
         if ((System_tracker.node_2_connected == False) or (System_tracker.node_2_gps_quality != raddic.not_connected)) and (System_tracker.arestor_connected):
@@ -90,12 +91,12 @@ def handle_slave_trigger_ack(node_number,gps_sync_state):
             send_arestor_trigger_ack()  
     
 def send_arestor_trigger_ack():
-    message = raddic.create_arestor_trig_req_response(str(Trigger.unix_gps_trigger_deadline), System_tracker.get_node_gps_state, System_tracker.node_1_gps_quality, System_tracker.node_2_gps_quality)
+    message = raddic.create_arestor_trig_req_response(str(Trigger.unix_gps_trigger_deadline), System_tracker.get_node_gps_state(), System_tracker.node_1_gps_quality, System_tracker.node_2_gps_quality)
     Server.send_to_arestor(message)
         
 def handle_arestor_trigger_request(trigger_type,trigger_delay):
     '''
-    function ran when master node received triger req from Arestor 
+    function ran when master node received trigger req from Arestor 
     
     '''
     # set the trigger type to that requested by 
@@ -246,7 +247,7 @@ def main():
     
     # Start GPSDO service
     GPSDO = grclok_1500.SpecGPSDO(True) # Create GPSDO instance
-    
+    System_tracker = sync_system_state(args.node)
     if args.node == 0:
         #Initialise Trigger
         Trigger = trigger_control.Trigger(args.node) # Create trigger instance
@@ -273,7 +274,7 @@ def main():
     _set_system_time()
     MainUi.set_poll_gpsdo(True)
     
-    System_tracker = sync_system_state(args.node)
+    
     
      
 

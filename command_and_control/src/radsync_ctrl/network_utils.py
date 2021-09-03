@@ -103,10 +103,6 @@ Code for RadSync Master Node Server
 '''
 
 
-ARESTOR_CONNECTED = False
-N1_CONNECTED = False
-N2_CONNECTED = False
-
 
 
 class MasterRadSyncServer():
@@ -119,7 +115,6 @@ class MasterRadSyncServer():
         self.server_thread.start()
         
     def stop_server(self):
-        global ARESTOR_CONNECTED
         '''
         method to shutdown the ThreadedTCPServer 
         '''
@@ -128,27 +123,26 @@ class MasterRadSyncServer():
         self.server.close
         
     def broadcast_to_slaves(self,message):
-        global N1_CONNECTED, N2_CONNECTED
-        if N1_CONNECTED:
-            
+        if  main_script.System_tracker.node_1_connected:
             message = str.encode(message)
             self.radsync_node_1_con.sendall(message)
-        if N2_CONNECTED:
+        if  main_script.System_tracker.node_2_connected:
             message = str.encode(message)
             self.radsync_node_2_con.sendall(message)
         
     def send_to_arestor(self,message):
-        global ARESTOR_CONNECTED
-        if ARESTOR_CONNECTED:
+        if main_script.System_tracker.arestor_connected:
             message = str.encode(message)
             self.arestor_con.sendall(message)
         else:
             print('Arestor is not connected')
             
+    def disconnect_from_arestor(self):
+        self.send_to_arestor(EXIT_FLAG)
+        main_script.System_tracker.arestor_connected = False
             
         
     def _setup_server_thread(self):
-      global ARESTOR_CONNECTED,N1_CONNECTED,N2_CONNECTED
       '''
       Called in a new thread to hosts the ThreadedTCPServer. 
           each time a new client is connected, a new thread is started to deal 
@@ -172,28 +166,28 @@ class MasterRadSyncServer():
                  if (addr[0] == NODE_1_IP_ADDRESS):
                    self.radsync_node_1_con = con
                    print('RadSync Node 1 Connected')
-                   main_script.MainUi.network_text_box.insert(END, 'RadSync Node 1 Connected \n')
                    name = 'RadSync Node 1'
+                   main_script.System_tracker.node_1_connected = True                  
+                   main_script.MainUi.network_text_box.insert(END, 'RadSync Node 1 Connected \n')
                    self.node1_thread = threading.Thread(target=_handle_client, args=(self.radsync_node_1_con, addr, name))
-                   N1_CONNECTED = True
                    self.node1_thread.start()
                   
                  elif (addr[0] == NODE_2_IP_ADDRESS):
                    self.radsync_node_2_con = con
                    print('RadSync Node 2 Connected')
-                   main_script.MainUi.network_text_box.insert(END, 'RadSync Node 2 Connected \n')
                    name = 'RadSync Node 2'
+                   main_script.System_tracker.node_2_connected = True
+                   main_script.MainUi.network_text_box.insert(END, 'RadSync Node 2 Connected \n')
                    self.node2_thread = threading.Thread(target=_handle_client, args=(self.radsync_node_2_con, addr, name))
-                   N2_CONNECTED = True
                    self.node2_thread.start()
                    
                  else:
                    self.arestor_con = con
                    print('Arestor Command and Control Connected')
-                   main_script.MainUi.network_text_box.insert(END, 'Arestor Command and Control Connected \n')
                    name = 'Arestor'
+                   main_script.System_tracker.arestor_connected = True
+                   main_script.MainUi.network_text_box.insert(END, 'Arestor Command and Control Connected \n')
                    self.arestor_thread = threading.Thread(target=_handle_client, args=(self.arestor_con, addr, name))
-                   ARESTOR_CONNECTED = True
                    self.arestor_thread.start()
                    
 
@@ -202,7 +196,6 @@ class MasterRadSyncServer():
               time.sleep(1)  
           
 def _handle_client(con, addr, name):
-    global ARESTOR_CONNECTED,N1_CONNECTED,N2_CONNECTED
     '''
     Called in a server_thread to hosts each client connection. 
     a new thread is spawned for each client connection.
@@ -214,11 +207,11 @@ def _handle_client(con, addr, name):
             
             main_script.MainUi.network_text_box.insert(END, str(name + ' Disconnected \n'))
             if name == 'arestor':
-                ARESTOR_CONNECTED = False
+                main_script.System_tracker.arestor_connected = False
             if name == 'RadSync Node 1':
-                N1_CONNECTED = False
+                main_script.System_tracker.node_1_connected = False
             if name == 'RadSync Node 2':
-                N2_CONNECTED = False
+                main_script.System_tracker.node_2_connected = False
             break
         message = message.decode()  
         radsync_network_interface.radsync_decode_message(message)
