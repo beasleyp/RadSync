@@ -162,7 +162,7 @@ class MasterRadSyncServer():
           self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
           self.server.bind((NODE_0_IP_ADDRESS,SERVER_PORT))
           self.server.listen(3)
-          print('Server Started: ', self.server)
+          #print('Server Started: ', self.server)
           
           # while loop to listen for connections from slave   
           while (getattr(self.server_thread,"do_run",True)):
