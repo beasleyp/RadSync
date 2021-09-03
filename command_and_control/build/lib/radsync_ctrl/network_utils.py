@@ -53,15 +53,23 @@ class SlaveRadSyncClient():
         self.client_thread = threading.Thread(target=self._setup_client_thread)
         self.client_thread.start()
         
+    def stop_client(self): 
+        '''
+        method to shutdown and disconnect fron Server 
+        '''
+        self.client_thread.do_run = False
+        self.client_socket.shutdown(socket.SHUT_RDWR)
+        self.client_socket.close
+        
+        
     def _setup_client_thread(self):
       '''
       '''
       self.client_thread = threading.currentThread()
       while True:
-          print('running')
           with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as self.client_socket:    
               self.client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-              
+             
               # try and connect to server in while loop that only breaks when
               # no error 1 Hz
               while True:   
@@ -85,7 +93,7 @@ class SlaveRadSyncClient():
                     if message == EXIT_FLAG or not message:
                         print("client Shutdown initiated by server\n")
                         break
-                    print('message received from server: ', message)
+                    #print('message received from server: ', message)
                     radsync_network_interface.radsync_decode_message(message)
                     time.sleep(1)
               self.client_socket.close()

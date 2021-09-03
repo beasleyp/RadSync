@@ -106,7 +106,6 @@ def handle_arestor_trigger_request(trigger_type,trigger_delay):
     # setup a trigger in the trigger subsystem
     Trigger.setTriggerPending(trigger_delay)
     
-    #
 
 
 def handle_slave_trigger_validity(node_number,trigger_validity):
@@ -124,14 +123,17 @@ def handle_slave_trigger_validity(node_number,trigger_validity):
 
 #*************Exit Routine****************
 def exit_routine(): # runs this routine upon exit
-    global Server
+    global Server, System_tracker, Client
     MainUi.gpsdo_textbox.insert(END,"****Exiting Program****\n")
     MainUi.mGui.destroy() # close the window
     #TCPServer.stopServer()
     GPSDO.pollGpsdoMetrics(False)
     GPSDO.GPSDO_SER.close()
     setup_file_to_save_gpsdo_metics(False)
-    Server.stop_server()
+    if System_tracker.this_node == 0:
+        Server.stop_server()
+    else:
+        Client.stop_client()
     os._exit(1)
 
 

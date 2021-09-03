@@ -101,16 +101,16 @@ class Trigger():
       entry point to trigger subsystem from network
       '''
       self.unix_gps_trigger_deadline  = float(unix_trigger_deadline)
-      self.triggId = trig_id
-      print( "Unix Trigger Deadline", self.unix_gps_trigger_deadline) 
-      #self.triggerSet()
+      self.triggId = int(trig_id)
+      #print( "Unix Trigger Deadline", self.unix_gps_trigger_deadline) 
+      self.set_trigger_type()
       self.calculatePulseDelay()
       
         
     def calculateTriggerTime(self):
       if (main_script.MainUi.is_polling_gpsdo == True):
          self.unix_gps_trigger_deadline = main_script.GPSDO.epochGpsDateTime + self.Delay_Trigger_Sec
-         print( "GPS Trigger Deadline : ", self.unix_gps_trigger_deadline )
+         #print( "GPS Trigger Deadline : ", self.unix_gps_trigger_deadline )
          self.broadcastTrigger()
          
       if (main_script.MainUi.is_polling_gpsdo == False):
@@ -120,16 +120,16 @@ class Trigger():
            gps_Time = main_script.GPSDO.getGpsTime()
          except Exception as e :
            print(str(e))
-         print( "gps_time :", gps_Time)
+         #print( "gps_time :", gps_Time)
          date_Time = date + gps_Time 
-         print("date_time :", date_Time)
+         #print("date_time :", date_Time)
          p = '%Y-%m-%d %H:%M:%S'
          epoch = datetime.datetime(1970, 1, 1)
-         print("epoch :", epoch)
+         #print("epoch :", epoch)
          self.Epoch_Time = (datetime.datetime.strptime(date_Time,p) - epoch).total_seconds()
-         print("epoch_Time =", self.Epoch_Time)
+         #print("epoch_Time =", self.Epoch_Time)
          self.Epoch_Trigger_Deadline = self.Epoch_Time + self.Delay_Trigger_Sec #set trigger epoch time 
-         print("Epoch Trigger Deadline", self.Epoch_Trigger_Deadline)
+         #print("Epoch Trigger Deadline", self.Epoch_Trigger_Deadline)
          #self.realTimeCounter()
          self.broadcastTrigger()
       
@@ -139,22 +139,10 @@ class Trigger():
         send ack to Arestor if connected
         '''
         if self.node == 0:
-            print('broadcast trigger')
+            #print('broadcast trigger')
             message = raddic.create_radsync_trig_req_message(self.unix_gps_trigger_deadline , self.triggId)
             main_script.Server.broadcast_to_slaves(message)
-            '''
-            time.sleep(5)
-            if main_script.System_tracker.arestor_connected:
-                message = raddic.create_arestor_trig_req_response(self.unix_gps_trigger_deadline, main_script.System_tracker.get_node_gps_state(), main_script.System_tracker.node_1_gps_quality, main_script.System_tracker.node_2_gps_quality)
-                main_script.Server.send_to_arestor(message)
-            
-            if main_script.System_tracker.node_1_connected == True or main_script.System_tracker.node_1_connected == True :
-               
-                # send_to_slaves(message)
-                main_script.MainUi.network_text_box.insert(END, "Trigger Time Broadcast \n")
-            else:
-                 main_script.MainUi.network_text_box.insert(END, "Trigger Time not Broadcast \n")
-            '''
+
       
     def triggerSelect(self):      
       #Query UI trigger check boxes
@@ -218,10 +206,9 @@ class Trigger():
         self.rfsocTrigg = True
     
     def calculatePulseDelay(self):
-      #print "calc pre pulse"
       self.Pulse_Pre_Delay = 1 + 0.5*main_script.GPSDO.PPSPulseWidth*0.000000001 - 0.5*self.Window_Length
-      print("Pulse Pre_delay", str(self.Pulse_Pre_Delay))
-      #print "completed calc"
+      #print("Pulse Pre_delay", str(self.Pulse_Pre_Delay))
+
       
     def realTimeCounter(self):
       if self.unix_gps_trigger_deadline != -1: #only clock RTC if there is a trigger time set.
@@ -266,9 +253,9 @@ class Trigger():
           GPIO.output(Trigger.Sync_Pass, Low)
           GPIO.output(Trigger.Sync_Pass, Low)
           if ((main_script.GPSDO.epochGpsDateTime - self.unix_gps_trigger_deadline ) == 0):
-            main_script.MainUi.trigger_text_box.insert(END, 'Trigger Valid \n')
-            print("time: ", main_script.GPSDO.epochGpsDateTime)
-            print("trigg time: " ,self.unix_gps_trigger_deadline )
+            main_script.MainUi.trigger_text_box.insert(END, '\nTrigger Valid)
+            #print("time: ", main_script.GPSDO.epochGpsDateTime)
+            #print("trigg time: " ,self.unix_gps_trigger_deadline )
             self._broadcast_trigger_validity(True)
           else:
             main_script.MainUi.trigger_text_box.insert(END, 'Trigger Error of ' + str(int(main_script.GPSDO.epochGpsDateTime - self.unix_gps_trigger_deadline )) + ' s \n')     
