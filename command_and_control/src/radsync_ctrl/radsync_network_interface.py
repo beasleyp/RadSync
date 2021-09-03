@@ -15,7 +15,6 @@
 This module contains the structure for all the messages that should be sent
 between the Arestor Radar and the RadSync system. It also contains the structure
 for all the messages that should be sent between RadSync nodes.
-
 Any changes to the comminication should be made to this document, NOT inside
 the command and control modules of either system. This will allow the interface
 to be easily updated without the requirement for updating multiple code bases.
@@ -23,7 +22,7 @@ to be easily updated without the requirement for updating multiple code bases.
 
 
 from . import main_script
-from . import trigger_control
+#from . import trigger_control # comment out when used in Arestor Command & Control
 
     
 Delimiter = '$'
@@ -41,11 +40,11 @@ RadSync_slave_trig_ack_prefix = 'slave_trig_ack'
 RadSync_slave_trig_valid_prefix = 'slave_trig_valid'
 
 # RadSync gps quality strings 
-not_connected = "not connected"
-not_tracking_gps = "not tracking gps"
-poor_gps_sync = "poor time synchronisation"# PPSOUT - PPSREF error > 20ns 
-nominal_gps_sync = "nominal time synchronisation" # PPSOUT - PPSREF error < 20ns 
-good_gps_sync = "good time synchronisation" # PPSOUT - PPSREF error < 10ns 
+not_connected = "Not connected"
+not_tracking_gps = "Not tracking gps"
+poor_gps_sync = "Poor time synchronisation"# PPSOUT - PPSREF error > 20ns 
+nominal_gps_sync = "Nominal time synchronisation" # PPSOUT - PPSREF error < 20ns 
+good_gps_sync = "Good time synchronisation" # PPSOUT - PPSREF error < 10ns 
 
 
 def arestor_decode_message(message):
@@ -64,10 +63,10 @@ def arestor_decode_message(message):
         node_0_gps_quality = message[2]
         node_1_gps_quality = message[3]
         node_2_gps_quality = message[4]
-        print("RadSync Trigger Request Acknowledgement \n")
-        print("Unix trigger deadline" +  str(unix_trigger_deadline) + "\n")
+        print("\nRadSync Trigger Request Acknowledgement")
+        #print("Unix trigger deadline: " +  str(unix_trigger_deadline))
         for x in range(2,len(message)):
-            print("Node " + str(x) + " : " + message[x] + "\n")
+            print("  Node " + str(x-2) + " : " + message[x])
        
     if message[0] == RadSync_master_trig_valid_prefix:
         '''
@@ -76,9 +75,9 @@ def arestor_decode_message(message):
         node_0_trig_validity = message[1]
         node_1_trig_validity = message[2]
         node_2_trig_validity = message[3]
-        print("RadSync Trigger Validity Message Received \n")
+        print("\nRadSync Trigger Validity Message Received")
         for x in range(1,len(message)):
-            print("Node " + str(x) + " : " + message[x] + "\n")
+            print("  Node " + str(x-1) + " : " + message[x])
        
             
         
@@ -97,8 +96,8 @@ def radsync_decode_message(message):
         '''
         trigger_type = message[1]
         trigger_delay = message[2]
-        print("\nTrigger request received from Arestor")
-        print("  Trigger type :" + trigger_type + "\n  Trigger Delay :" + trigger_delay)
+        print("Trigger request received from Arestor \n")
+        print("Trigger type :" + trigger_type + "  Trigger Delay :" + trigger_delay)
         if trigger_type == 'radar':
             trigger_type = 3 #1
         if trigger_type == 'freq':
@@ -110,10 +109,10 @@ def radsync_decode_message(message):
         '''
         decode trigger request from radsync master node
         '''
-        unix_trigger_deadline = float(message[1])
-        trigger_id = int(message[2])
-        print("\nTrigger request received from Master")
-        print("  Trigger type :" + str(trigger_id) + "\n  Unix trigger deadline :" + unix_trigger_deadline + "\n")
+        unix_trigger_deadline = message[1]
+        trigger_id = message[2]
+        print("Trigger request received from Master \n")
+        print("Trigger type :" + str(trigger_id) + "  Unix trigger deadline :" + unix_trigger_deadline)
         
         # initiate trigger in the trigger subsystem
         main_script.handle_slave_trigger_request(unix_trigger_deadline,trigger_id)
@@ -126,7 +125,7 @@ def radsync_decode_message(message):
         '''
         node_number = message[1]
         gps_sync_state = message[2]
-        print("\nTrigger Ack from Node " + str(node_number) + " : " + gps_sync_state)
+        print("Trigger Ack from Node " + str(node_number) + " : " + gps_sync_state)
         main_script.handle_slave_trigger_ack(node_number,gps_sync_state)
     
     if (message[0] == RadSync_slave_trig_valid_prefix):
@@ -135,7 +134,7 @@ def radsync_decode_message(message):
         '''
         node_number = message[1]
         trigger_validity = message[2]
-        print("\nTrigger validity from Node " + str(node_number) + " : " + trigger_validity) 
+        print("Trigger validity from Node " + str(node_number) + " : " + trigger_validity) 
         main_script.handle_slave_trigger_validity(node_number,trigger_validity)
   
 
@@ -164,7 +163,7 @@ def create_arestor_trig_req_response(unix_trigger_deadline, node_0_gps_quality, 
     used by RadSync
     prefix-node_0_gps_quality-node_1_gps_quality-node_2_gps_quality
     '''
-    message = RadSync_master_trig_ack_prefix + Delimiter + str(unix_trigger_deadline) + Delimiter + str(node_0_gps_quality) + Delimiter + str(node_1_gps_quality) + Delimiter + str(node_2_gps_quality)
+    message = RadSync_master_trig_ack_prefix + Delimiter + str(unix_trigger_deadline) + Delimiter + str(node_0_gps_quality)+ str(node_1_gps_quality) + str(node_2_gps_quality)
     return message 
 
 def create_arestor_trig_validity_message(node_0_trig_validity, node_1_trig_validity, node_2_trig_validity):
