@@ -255,7 +255,7 @@ class Trigger():
           if ((main_script.GPSDO.epochGpsDateTime - self.unix_gps_trigger_deadline ) == 0):
             main_script.MainUi.trigger_text_box.insert(END, '\nTrigger Valid')
             #print("time: ", main_script.GPSDO.epochGpsDateTime)
-            #print("trigg time: " ,self.unix_gps_trigger_deadline )radsync_network_interface.py
+            #print("trigg time: " ,self.unix_gps_trigger_deadline )
             self._broadcast_trigger_validity(True)
           else:
             main_script.MainUi.trigger_text_box.insert(END, 'Trigger Error of ' + str(int(main_script.GPSDO.epochGpsDateTime - self.unix_gps_trigger_deadline )) + ' s \n')     
