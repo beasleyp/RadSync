@@ -73,6 +73,7 @@ class RadSyncUi():
 
         # Variables for trigger box
         self.user_trigger_delay_input = StringVar()
+        self.user_trigger_duration_input = StringVar()
         self.trigger_countdown_text = StringVar()
     
         # Variables for PPSOUT Error Variables
@@ -184,14 +185,16 @@ class RadSyncUi():
             self.set_poll_gpsdo(True)
             time.sleep(1)
         self.trigger_time_entry_box.configure(state=DISABLED) # Disable the entry box
-        trigger_delay = int(self.user_trigger_delay_input.get()) 
+        trigger_delay = int(self.user_trigger_delay_input.get()) # get trigger delay from entry box
+        trigger_duration = int(self.user_trigger_duration_input.get()) # get trigger duration from entry box
         
         if (trigger_delay < 10) or (trigger_delay == ""): #don't accept a trigger deadline less than 10s away.
           self.trigger_text_box.insert(END, "Minimum trigger delay is 10s;\nTrigger delay set to 10s; \n")
           self.trigger_text_box.yview(END)
           trigger_delay = 10
         # request a trigger from trigger routine with trigger_delay in s  
-        main_script.Trigger.setTriggerPending(trigger_delay)
+        main_script.Trigger.setTriggerPending(trigger_delay,trigger_duration)
+        
     
     '''
     Network related functions 
@@ -344,10 +347,15 @@ class RadSyncUi():
         self.trigger_time_entry_box = Entry(trigger_control_frame,textvariable=self.user_trigger_delay_input)
         self.trigger_time_entry_box.grid(row=4,column=0,columnspan=2,sticky=W,padx=5)
         mTrigConfirm = Button(trigger_control_frame,text="Confirm",command=self._request_trigger).grid(row=4,column=2,padx=5)
+        
+        mTrigLabel = Label(trigger_control_frame,text="Enter capture duration").grid(row=5,column=0, columnspan=3,sticky=W,padx=5)
+        self.trigger_duration_entry_box = Entry(trigger_control_frame,textvariable=self.user_trigger_duration_input)
+        self.trigger_duration_entry_box.grid(row=6,column=0,columnspan=2,sticky=W,padx=5)
+
         self.trigger_countdown_text.set("Seconds until Trigger: Nil")
-        mTrigLabel = Label(trigger_control_frame,textvariable=self.trigger_countdown_text).grid(row=5,column=0,columnspan=3,sticky=W,padx=5)
+        mTrigLabel = Label(trigger_control_frame,textvariable=self.trigger_countdown_text).grid(row=7,column=0,columnspan=3,sticky=W,padx=5)
         self.trigger_text_box = Text(trigger_control_frame, height=8, width=45)
-        self.trigger_text_box.grid(row=6,column=0, columnspan=3,pady=5,padx=5)
+        self.trigger_text_box.grid(row=8,column=0, columnspan=3,pady=5,padx=5)
         scroll = Scrollbar(self.trigger_text_box,command=self.trigger_text_box.yview)
         self.trigger_text_box.configure(yscrollcommand=scroll.set)
         # End of Trigger controls

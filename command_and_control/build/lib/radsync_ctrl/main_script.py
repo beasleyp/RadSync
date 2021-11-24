@@ -61,12 +61,12 @@ GPSDO_Present = True
 handles for network interface 
 '''
 
-def handle_slave_trigger_request(unix_trigger_deadline,trigger_id):
+def handle_slave_trigger_request(unix_trigger_deadline, trigger_duration, trigger_id):
     '''
     function ran when a slave node recevies a trigger request from the master node
     '''
     # request trigger from trigger module
-    Trigger.setup_slave_trigger(unix_trigger_deadline,trigger_id)
+    Trigger.setup_slave_trigger(unix_trigger_deadline, trigger_duration, trigger_id)
     # send response to master node with gps validity
     message =  raddic.create_radsync_trig_ack_message(str(System_tracker.this_node), System_tracker.get_node_gps_state())
     Client.send_message(message)
@@ -143,9 +143,12 @@ def _set_system_time():
   if (system_time_set_flag == False):
     try:
         GPSDO_Date = GPSDO.getGpsDate()
+        print('GPSDO_Date = ', GPSDO_Date)
         GPSDO_Time = GPSDO.getGpsTime()
+        print('GPSDO_Time = ', GPSDO_Time)
         TimeLength = len(GPSDO_Time) - 2
         gpstime = GPSDO_Date[0:4] + GPSDO_Date[5:7] + GPSDO_Date[8:10] + " " + GPSDO_Time
+        print('GPSDO_date_time = ', gpstime)
         os.system('sudo date -u --set="%s"'% gpstime)
         print("System Time set to GPS time")
         system_time_set_flag = True

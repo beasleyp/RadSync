@@ -41,8 +41,10 @@ class Trigger():
     #inialise class level static variables 
     Trigger_Pass = 31   # Trigger Pass Pulse Output Pin for Primary Trigger (RFSoC and BladeRF Trigger)
     Trigger_2_Pass = 33 # Trigger Pass Pulse Output Pin for Secondary Trigger (bladeRad)
+    Trigger_or_Pass = 37 # Trigger Pass for holding up OR gate for bladeRAD trigger
     Sync_Pass = 29      # Trigger Pass Pulse Output Pin for Clock Divider Sync
     PPS_OUT = 15        # PPS_OUT from the GPSDO
+    
   
     def __init__(self,node):
       #initalise object level variables
@@ -52,6 +54,7 @@ class Trigger():
       self.Pulse_Pre_Delay = 0 # set pulse pre delay to 0; default before set
       self.Window_Length = 1 #Trigger window length; default
       self.Delay_Trigger_Sec  = -1   
+      self.trigger_duration = -1
       self.unix_gps_trigger_deadline = -1
       # Trigger Variables 
       self.bladeradtriggState = 0
@@ -63,6 +66,7 @@ class Trigger():
       self.triggId = 0;
       self.node = int(node);
      
+     
       #Setup Trigger IO Control 
       Low = GPIO.LOW
       GPIO.setwarnings(False)
@@ -70,9 +74,11 @@ class Trigger():
       GPIO.setmode(GPIO.BOARD)
       GPIO.setup(Trigger.Trigger_Pass, GPIO.OUT)
       GPIO.setup(Trigger.Trigger_2_Pass, GPIO.OUT)
+      GPIO.setup(Trigger.Trigger_or_Pass, GPIO.OUT)
       GPIO.setup(Trigger.Sync_Pass, GPIO.OUT)
       GPIO.output(Trigger.Trigger_Pass,Low) # Initial state of Trigger
       GPIO.output(Trigger.Trigger_2_Pass,Low) # Initial state of Trigger 2
+      GPIO.setup(Trigger.Trigger_or_Pass, Low) #Intitial State of OR gate input
       GPIO.output(Trigger.Sync_Pass,Low) # Initial state of Sync
       GPIO.setup(Trigger.PPS_OUT, GPIO.IN, pull_up_down=GPIO.PUD_UP)
       #start thread to detect PPS signal and send interupt
@@ -86,21 +92,23 @@ class Trigger():
         self.Trigger_Pending = False
       self.realTimeCounter() # always query RTC
       
-    def setTriggerPending(self,trigger_delay):
+    def setTriggerPending(self,trigger_delay,trigger_duration):
         '''
         public method that can receive a trigger request from UI or Arestor
         '''
         self.Delay_Trigger_Sec = trigger_delay # number of seconds in future to trigger
+        self.trigger_duration = trigger_duration #
         self.calculatePulseDelay()
         self.Trigger_Pending = True
       
         
-    def setup_slave_trigger(self, unix_trigger_deadline, trig_id):
+    def setup_slave_trigger(self, unix_trigger_deadline, trigger_duration, trig_id):
       '''
       function to accept trigger from master RadSync node
       entry point to trigger subsystem from network
       '''
       self.unix_gps_trigger_deadline  = float(unix_trigger_deadline)
+      self.trigger_duration = int(trigger_duration)
       self.triggId = int(trig_id)
       #print( "Unix Trigger Deadline", self.unix_gps_trigger_deadline) 
       self.set_trigger_type()
@@ -140,7 +148,7 @@ class Trigger():
         '''
         if self.node == 0:
             #print('broadcast trigger')
-            message = raddic.create_radsync_trig_req_message(self.unix_gps_trigger_deadline , self.triggId)
+            message = raddic.create_radsync_trig_req_message(self.unix_gps_trigger_deadline, self.trigger_duration, self.triggId)
             main_script.Server.broadcast_to_slaves(message)
 
       
@@ -228,6 +236,10 @@ class Trigger():
           self.sendTrigger()
           self.Epoch_Trigger_Deadline = -1 # reset the epoch trigger deadline
       
+        
+        
+        
+        
     def sendTrigger(self):
       High = GPIO.HIGH
       Low = GPIO.LOW  
@@ -236,13 +248,20 @@ class Trigger():
           if self.rfsocTrigg == True:
             GPIO.output(Trigger.Trigger_Pass, High)
             print("RFSoC Trigger Pass")
+            
           if self.bladeradTrigg == True:
             GPIO.output(Trigger.Trigger_2_Pass, High)
             print("bladeRAD Trigger Pass")
+            
           if self.freqdivTrigg == True:
             GPIO.output(Trigger.Sync_Pass, High)
             print("Frequency Divider Trigger Pass")
-          time.sleep(self.Window_Length) # open the window for an appropriate time
+          
+          time.sleep(self.Window_Length*0.5) # open the window for an appropriate time
+          # if bladeRAD trigger - asssert or gate high halfway through capture
+          if self.bladeradTrigg == True:
+              GPIO.output(Trigger.Trigger_or_Pass, High) 
+          time.sleep(self.Window_Length*0.5) # open the window for an appropriate time
           GPIO.output(Trigger.Trigger_Pass, Low) # ensure the pass pulse has gone low
           GPIO.output(Trigger.Trigger_Pass, Low)
           GPIO.output(Trigger.Trigger_Pass, Low)
@@ -252,6 +271,7 @@ class Trigger():
           GPIO.output(Trigger.Sync_Pass, Low) # ensure the pass pulse has gone low
           GPIO.output(Trigger.Sync_Pass, Low)
           GPIO.output(Trigger.Sync_Pass, Low)
+          
           if ((main_script.GPSDO.epochGpsDateTime - self.unix_gps_trigger_deadline ) == 0):
             main_script.MainUi.trigger_text_box.insert(END, '\nTrigger Valid')
             #print("time: ", main_script.GPSDO.epochGpsDateTime)
@@ -260,12 +280,23 @@ class Trigger():
           else:
             main_script.MainUi.trigger_text_box.insert(END, 'Trigger Error of ' + str(int(main_script.GPSDO.epochGpsDateTime - self.unix_gps_trigger_deadline )) + ' s \n')     
             self._broadcast_trigger_validity(False)
+          
+          
+          if self.bladeradTrigg == True:
+              time.sleep(self.trigger_duration-0.5)
+          GPIO.output(Trigger.Trigger_or_Pass, Low)
+          GPIO.output(Trigger.Trigger_or_Pass, Low)
+          GPIO.output(Trigger.Trigger_or_Pass, Low)
+          
           main_script.MainUi.trigger_countdown_text.set("Time until Trigger: Nil") # reset the trigger label
           if self.node == 0:
             main_script.MainUi.trigger_time_entry_box.configure(state=NORMAL)
       except Exception as e:
           print(str(e))
           os._exit(1)
+          
+          
+          
           
     def _broadcast_trigger_validity(self,this_node_validity):
         if self.node == 0:

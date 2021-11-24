@@ -110,12 +110,13 @@ def radsync_decode_message(message):
         decode trigger request from radsync master node
         '''
         unix_trigger_deadline = float(message[1])
-        trigger_id = int(message[2])
+        trigger_duration = int(message[2])
+        trigger_id = int(message[3])
         print("\nTrigger request received from Master")
         print("  Trigger type :" + str(trigger_id) + "\n  Unix trigger deadline :" + str(unix_trigger_deadline) + "\n")
         
         # initiate trigger in the trigger subsystem
-        main_script.handle_slave_trigger_request(unix_trigger_deadline,trigger_id)
+        main_script.handle_slave_trigger_request(unix_trigger_deadline, trigger_duration, trigger_id)
         
         
     
@@ -157,13 +158,15 @@ def create_arestor_trig_req_message(trigger_type, trigger_delay):
 Functions to be used by the RADSYNC MASTER node to encode 
 '''
 
-def create_arestor_trig_req_response(unix_trigger_deadline, node_0_gps_quality, node_1_gps_quality=not_connected, node_2_gps_quality=not_connected):
+def create_arestor_trig_req_response(gps_unix_trigger_deadline, node_0_gps_quality, node_1_gps_quality=not_connected, node_2_gps_quality=not_connected):
     '''
     function to create response message to send to arestor - only to be 
     used by RadSync
-    prefix-node_0_gps_quality-node_1_gps_quality-node_2_gps_quality
+    GPS time is 18s aheead of UTC; therefore unix_time_stamp has 18s removed to account for this
     '''
-    message = RadSync_master_trig_ack_prefix + Delimiter + str(unix_trigger_deadline) + Delimiter + str(node_0_gps_quality) + Delimiter + str(node_1_gps_quality) + Delimiter + str(node_2_gps_quality)
+    utc_unix_trigger_deadline = float(gps_unix_trigger_deadline) - 18
+    message = RadSync_master_trig_ack_prefix + Delimiter + str(utc_unix_trigger_deadline) + Delimiter + str(node_0_gps_quality) + Delimiter + str(node_1_gps_quality) + Delimiter + str(node_2_gps_quality)
+    print(message)
     return message 
 
 def create_arestor_trig_validity_message(node_0_trig_validity, node_1_trig_validity, node_2_trig_validity):
@@ -174,12 +177,12 @@ def create_arestor_trig_validity_message(node_0_trig_validity, node_1_trig_valid
     message = RadSync_master_trig_valid_prefix + Delimiter + str(node_0_trig_validity) + Delimiter + str(node_1_trig_validity) + Delimiter + str(node_2_trig_validity)
     return message
     
-def create_radsync_trig_req_message(unix_trigger_deadline, trigger_id):
+def create_radsync_trig_req_message(unix_trigger_deadline, trigger_duration, trigger_id):
     '''
     fucntion to create message to send to slave radsync nodes to request 
     trigger - only to be used by radsync
     '''
-    message = RadSync_master_trig_prefix + Delimiter + str(int(unix_trigger_deadline)) + Delimiter + str(trigger_id)
+    message = RadSync_master_trig_prefix + Delimiter + str(int(unix_trigger_deadline))  + Delimiter + str(trigger_duration) + Delimiter + str(trigger_id)
     return message
 
 

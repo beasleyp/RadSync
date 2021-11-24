@@ -128,13 +128,12 @@ class SpecGPSDO():
              c = 3
              while c > 0: #loop through 3 attempts to connect to GPSDO
                  c -= 1
+                 self.setGpsCom(False)
+                 self.stopBeating()  #Ensure GPSDO isn't beating any messages
                  if (self.getSerialNo() == ''):
                    self.gpsdoDetected = False
                    print("GPSDO not detected")
                  else:
-                   time.sleep(0.1)
-                   self.setGpsCom(False)
-                   self.stopBeating()  #Ensure GPSDO isn't beating any messages
                    time.sleep(0.1)
               
              try:
@@ -330,6 +329,7 @@ class SpecGPSDO():
       while (getattr(self.PPSMetrics, "do_run", True)):
         try:
           response = self._readLine() 
+          #print(response)
           if (response[0:6] == "$PTNTA"):
             self.decodePTNTA(response)
           elif (response[0:6] == "$PTNTS"):
