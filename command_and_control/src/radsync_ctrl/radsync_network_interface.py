@@ -113,7 +113,7 @@ def radsync_decode_message(message):
         trigger_duration = int(message[2])
         trigger_id = int(message[3])
         print("\nTrigger request received from Master")
-        print("  Trigger type :" + str(trigger_id) + "\n  Unix trigger deadline :" + str(unix_trigger_deadline) + "\n")
+        print("  Trigger type :" + str(trigger_id) + "\n  Trigger duration :" + str(trigger_duration) + "\n" + "\n  Unix trigger deadline :" + str(unix_trigger_deadline) + "\n")
         
         # initiate trigger in the trigger subsystem
         main_script.handle_slave_trigger_request(unix_trigger_deadline, trigger_duration, trigger_id)
