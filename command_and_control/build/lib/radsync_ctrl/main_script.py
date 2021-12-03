@@ -47,7 +47,7 @@ import csv
 
 #import from RadSync src folder
 from . import trigger_control
-from . import grclok_1500
+from . import lnr_clok_1500
 from . import network_utils
 from . import main_ui_window
 from . import radsync_network_interface as raddic
@@ -251,7 +251,7 @@ def main():
     args = parse_cmdline_args()
     
     # Start GPSDO service
-    GPSDO = grclok_1500.SpecGPSDO(True) # Create GPSDO instance
+    GPSDO = lnr_clok_1500.SpecGPSDO(True) # Create GPSDO instance
     System_tracker = sync_system_state(args.node)
     if args.node == 0:
         #Initialise Trigger

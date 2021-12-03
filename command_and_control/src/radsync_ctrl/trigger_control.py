@@ -64,6 +64,7 @@ class Trigger():
       self.bladeradTrigg = True 
       self.freqdivTrigg = True
       self.triggId = 0;
+      self.trigg_valadity = False
       self.node = int(node);
      
      
@@ -258,9 +259,13 @@ class Trigger():
             print("Frequency Divider Trigger Pass")
           
           time.sleep(self.Window_Length*0.5) # open the window for an appropriate time
-          # if bladeRAD trigger - asssert or gate high halfway through capture
+         
+          # if bladeRAD trigger - asssert or gate high halfway AND gate HIGH duration   
           if self.bladeradTrigg == True:
               GPIO.output(Trigger.Trigger_or_Pass, High) 
+          
+
+          # pause for half AND gate HIGH duration   
           time.sleep(self.Window_Length*0.5) # open the window for an appropriate time
           GPIO.output(Trigger.Trigger_Pass, Low) # ensure the pass pulse has gone low
           GPIO.output(Trigger.Trigger_Pass, Low)
@@ -272,21 +277,26 @@ class Trigger():
           GPIO.output(Trigger.Sync_Pass, Low)
           GPIO.output(Trigger.Sync_Pass, Low)
           
+          
+          #check trigger valadity
           if ((main_script.GPSDO.epochGpsDateTime - self.unix_gps_trigger_deadline ) == 0):
-            main_script.MainUi.trigger_text_box.insert(END, '\nTrigger Valid')
-            #print("time: ", main_script.GPSDO.epochGpsDateTime)
-            #print("trigg time: " ,self.unix_gps_trigger_deadline )
-            self._broadcast_trigger_validity(True)
+              self.trigg_valadity = True
+              main_script.MainUi.trigger_text_box.insert(END, '\nTrigger Valid')
           else:
             main_script.MainUi.trigger_text_box.insert(END, 'Trigger Error of ' + str(int(main_script.GPSDO.epochGpsDateTime - self.unix_gps_trigger_deadline )) + ' s \n')     
-            self._broadcast_trigger_validity(False)
-          
-          
+            self.trigg_valadity = False
+
+         
+          # pause for trigger duration if bladeRad trigger requested
           if self.bladeradTrigg == True:
               time.sleep(self.trigger_duration-0.5)
+              print("trigger duration ",self.trigger_duration)
           GPIO.output(Trigger.Trigger_or_Pass, Low)
           GPIO.output(Trigger.Trigger_or_Pass, Low)
           GPIO.output(Trigger.Trigger_or_Pass, Low)
+          
+          # broadcast trigger valadity to other radar or master node
+          self._broadcast_trigger_validity(self.trigg_valadity)
           
           main_script.MainUi.trigger_countdown_text.set("Time until Trigger: Nil") # reset the trigger label
           if self.node == 0:
