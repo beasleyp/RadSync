@@ -52,7 +52,7 @@ def _dateTimeToEpoch(dateTime):
 
 class SpecGPSDO():
     '''
-    class for controling Spectratime GR-Clok 1500 Rubidium GPS Disaplined Oscillator
+    class for controling Spectratime LNR-Clok 1500 Rubidium GPS Disaplined Oscillator
     Connecting to GPSDO using serial connection on Raspberry Pi GPIO 
     '''
     
