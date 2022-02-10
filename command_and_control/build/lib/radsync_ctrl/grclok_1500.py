@@ -86,11 +86,12 @@ class SpecGPSDO():
       self.RawResponse = ""
       #Variables for Oscillator Data Frame
       self.Status =  ""
-      self.RbStatus = ""
+      self.DiscipliningStatus = ""
       self.CurrentFreq = ""
       self.HoldoverFreq = ""
       self.ConstantMode = ""
       self.ConstantValue = ""
+      self.HoldoverDuration = ""
       #Variables for GPS Receiver Data Frame
       self.Latitude =  ""
       self.LatitudeLabel = ""
@@ -99,12 +100,15 @@ class SpecGPSDO():
       self.Altitude =  ""
       self.Satellites = ""
       self.Tracking = ""
-      self.Validity = ""
+      self.GPSStatus = ""
+      self.GPSReceiverMode = "" # Trimble Related
+      self.SelfSurveyProgress = "" # Trimble Related 
       #PPS Error Related Metrics 
       self.hasPolled = False
       self.PPSRefSigma = 0
       self.FinePhaseComp = 0
       self.EffTimeInt = 0
+      self.clockOffsetPPB = 0 # New 
       #General GPSDO Metrics
       self.PPSPulseWidth = 0
       self.GpsDateTime = 0
@@ -358,11 +362,11 @@ class SpecGPSDO():
        
        #Oscilator Quality 
        if (responseArray[2]=="0"):
-          self.RbStatus = "Warming Up"
+          self.DisapliningStatus = "Warming Up"
        elif (responseArray[2]=="1"):
-          self.RbStatus = "Freerun"
+          self.DisapliningStatus = "Freerun"
        elif (responseArray[2]=="2"):
-          self.RbStatus = "Disciplined"
+          self.DisapliningStatus = "Disciplined"
        
         #PPSREF-PPSInT Interval
        val = int(responseArray[4])
@@ -378,15 +382,15 @@ class SpecGPSDO():
        self.Status = _decodeGPSDOStatus(str(responseArray[6]))
        
        #GPS Vaalidity 
-       validity = responseArray[8].split("*")
-       if (validity[0] == "0"):
-          self.Validity = "Invalid"
-       elif (validity[0] == "1"):
-          self.Validity = "Manual"
-       elif (validity[0] == "2"):
-          self.Validity = "Older than 240 hrs"
-       elif (validity[0] == "3"):
-          self.Validity = "Fresh"
+       GPSStatus = responseArray[8].split("*")
+       if (GPSStatus[0] == "0"):
+          self.GPSStatus = "Invalid"
+       elif (GPSStatus[0] == "1"):
+          self.GPSStatus = "Manual"
+       elif (GPSStatus[0] == "2"):
+          self.GPSStatus = "Older than 240 hrs"
+       elif (GPSStatus[0] == "3"):
+          self.GPSStatus = "Fresh"
        
     def decodePTNTS(self,response):
       responseArray = response.split(",") 

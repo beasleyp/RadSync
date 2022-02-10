@@ -47,7 +47,12 @@ import csv
 
 #import from RadSync src folder
 from . import trigger_control
+<<<<<<< HEAD
 from . import lnr_clok_1500
+=======
+from . import grclok_1500
+from . import trimble_thunderbolt_e
+>>>>>>> Conversion-to-module-structure
 from . import network_utils
 from . import main_ui_window
 from . import radsync_network_interface as raddic
@@ -162,7 +167,7 @@ functions to deal with saving gpsdo metrics to file
 
 def setup_file_to_save_gpsdo_metics(flag):
   global gpsdo_metrics_writer, gpsdo_metrics_file
-  header = ['GPS Time','epoch Time','GPSDO Status','RB Status','Current Freq','Holdover Freq','Time Constant Mode','Time Constant Value','Latitude','N/S','Longitude','E/W','Validiity','Fine Phase Comparator','Effective Time Interval','PPSREF sigma']
+  header = ['GPS Time','epoch Time','GPSDO Status','RB Status','Current Freq','Holdover Freq','Time Constant Mode','Time Constant Value','Latitude','N/S','Longitude','E/W','GPS Status','Fine Phase Comparator','Effective Time Interval','PPSREF sigma']
   if flag:
     print("Open file for saving GPSDO metrics")
     now = datetime.datetime.now()
@@ -179,7 +184,7 @@ def setup_file_to_save_gpsdo_metics(flag):
       epoch_date
 def save_gpsdo_metrics_to_file():
       global gpsdo_metrics_writer, gpsdo_metrics_file
-      gpsdo_metrics_writer.writerow([GPSDO.GpsDateTime,GPSDO.epochGpsDateTime,GPSDO.Status,GPSDO.RbStatus,GPSDO.CurrentFreq,GPSDO.HoldoverFreq,GPSDO.ConstantMode,GPSDO.ConstantValue,GPSDO.Latitude,GPSDO.LatitudeLabel,GPSDO.Longitude,GPSDO.LongitudeLabel,GPSDO.Validity,GPSDO.FinePhaseComp,GPSDO.EffTimeInt,GPSDO.PPSRefSigma])
+      gpsdo_metrics_writer.writerow([GPSDO.GpsDateTime,GPSDO.epochGpsDateTime,GPSDO.Status,GPSDO.DiscipliningStatus,GPSDO.CurrentFreq,GPSDO.HoldoverFreq,GPSDO.ConstantMode,GPSDO.ConstantValue,GPSDO.Latitude,GPSDO.LatitudeLabel,GPSDO.Longitude,GPSDO.LongitudeLabel,GPSDO.GPSStatus,GPSDO.FinePhaseComp,GPSDO.EffTimeInt,GPSDO.PPSRefSigma])
       
 
 class sync_system_state():
@@ -251,8 +256,15 @@ def main():
     args = parse_cmdline_args()
     
     # Start GPSDO service
+<<<<<<< HEAD
     GPSDO = lnr_clok_1500.SpecGPSDO(True) # Create GPSDO instance
     System_tracker = sync_system_state(args.node)
+=======
+    # GPSDO = grclok_1500.SpecGPSDO(True) # Create GPSDO instance
+    GPSDO = trimble_thunderbolt_e.ThunderboltGPSDO(True) # Create GPSDO instance
+
+    
+>>>>>>> Conversion-to-module-structure
     if args.node == 0:
         #Initialise Trigger
         Trigger = trigger_control.Trigger(args.node) # Create trigger instance
@@ -260,8 +272,8 @@ def main():
         time.sleep(5)
         
         # Start server to serve connections to RadSyn Slaves and Arestor clients 
-        Server = network_utils.MasterRadSyncServer()
-        Server.start_server()
+        #Server = network_utils.MasterRadSyncServer()
+        #Server.start_server()
     
     if args.node == 1:
         #Initialise Trigger
@@ -276,10 +288,14 @@ def main():
     MainUi.mGui.protocol('WM_DELETE_WINDOW',exit_routine)
     
     #set RPI time to gps time - to delete when NTP server running
-    _set_system_time()
+    #_set_system_time()
     MainUi.set_poll_gpsdo(True)
     
+<<<<<<< HEAD
     
+=======
+    #System_tracker = sync_system_state(args.node)
+>>>>>>> Conversion-to-module-structure
     
      
 
