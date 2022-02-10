@@ -19,28 +19,61 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from . import main_script
-
-
 import serial
 import threading
 import time
 from tkinter import *
 import datetime
+import ptsip
+import math
 
-
-def _decodeGPSDOStatus(x):
+def _decodeGPSReceiverMode(x):
       return {
-        '0' : "Warming Up",
-        '1' : "Tracking Set Up",
-        '2' : "Tracking PPS REF",
-        '3' : "Sync to PPS REF",
-        '4' : "Free Run",
-        '5' : "PPS REF Unstable",
-        '6' : "No PPS REF",
-        '7' : "Frozen",
-        '8' : "Factory Diagnostic",
-        '9' : "Searching RB Line...",
+        '0' : "Auto (2D/3D)",
+        '1' : "Single Sat (Time)",
+        '3' : "Horizontal (2D)",
+        '4' : "Full Position (3D)",
+        '7' : "Over_Det Clock",
         }[x]
+      
+def _decodeDisciplingMode(x):   
+       return {
+        '0' : "Locked to GPS (Normal)",
+        '1' : "Power Up",
+        '2' : "Auto Holdover",
+        '3' : "Manual Holdover",
+        '4' : "Recovery",
+        '5' : "invlaid state",
+        '6' : "Disciplining Disabled",
+        }[x]
+
+def _decodeGPSStatus(x):   
+       return {
+        '0' : "Doing Fixes",
+        '1' : "No GPS Time",
+        '3' : "PDOP too high",
+        '8' : "No usable Sats",
+        '9' : "1 Sat usable",
+        '10' : "2 Sat usable",
+        '11' : "3 Sat usable",
+        '12' : "Cur Sat unusable",
+        '16' : "TRAIM rej fix",
+        }[x]      
+
+def _decodeDiscapliningActivity(x):   
+       return {
+        '0' : "Phase Locking",
+        '1' : "Oscillator warm-up",
+        '2' : "Frequency Locking",
+        '3' : "Placing PPS",
+        '4' : "Init loop filter",
+        '5' : "Compensating OCXO",
+        '6' : "Inactive",
+        '7' : "Not used",
+        '8' : "Recovery Mode",
+        '9' : "Cal/Ctrl Volt",
+        }[x]      
+
 
 def _dateTimeToEpoch(dateTime):
         p = '%Y%m%d%H%M%S'
@@ -50,7 +83,7 @@ def _dateTimeToEpoch(dateTime):
         #print "epoch_Time :", epochTime
         return epochTime
 
-class SpecGPSDO():
+class ThunderboltGPSDO():
     '''
     class for controling Spectratime GR-Clok 1500 Rubidium GPS Disaplined Oscillator
     Connecting to GPSDO using serial connection on Raspberry Pi GPIO 
@@ -93,16 +126,16 @@ class SpecGPSDO():
       self.ConstantValue = ""
       self.HoldoverDuration = ""
       #Variables for GPS Receiver Data Frame
-      self.Latitude =  ""
+      self.Latitude =  0
       self.LatitudeLabel = ""
-      self.Longitude =  ""
+      self.Longitude =  0
       self.LongitudeLabel = ""
       self.Altitude =  ""
       self.Satellites = ""
       self.Tracking = ""
       self.GPSStatus = ""
-      self.GPSReceiverMode = "" # Trimble Related
-      self.SelfSurveyProgress = "" # Trimble Related 
+      self.GPSReceiverMode = "" # New
+      self.SelfSurveyProgress = "" # New
       #PPS Error Related Metrics 
       self.hasPolled = False
       self.PPSRefSigma = 0
@@ -114,45 +147,22 @@ class SpecGPSDO():
       self.GpsDateTime = 0
       self.epochGpsDateTime = 0
       #Get PPSOUT Pulse Width
-      self.getPPSPulseWidth()
+      #self.getPPSPulseWidth()
       
             
     def _setupSerialCon(self):
       if (self.gpsdoPresent == True):
          
              self.GPSDO_SER = serial.Serial(
-                 port = '/dev/ttyS0',
+                 port = '/dev/ttyUSB0',
                  baudrate = 9600,
                  parity = serial.PARITY_NONE,
                  stopbits = serial.STOPBITS_ONE,
                  bytesize = serial.EIGHTBITS,
                  timeout = 1)
-             #print "GPSDO Setup Started"
-              
-             c = 3
-             while c > 0: #loop through 3 attempts to connect to GPSDO
-                 c -= 1
-                 self.setGpsCom(False)
-                 self.stopBeating()  #Ensure GPSDO isn't beating any messages
-                 if (self.getSerialNo() == ''):
-                   self.gpsdoDetected = False
-                   print("GPSDO not detected")
-                 else:
-                   time.sleep(0.1)
-              
-             try:
-                gpsdoID = self.getID()
-                #main_script.MainUi.gpsdo_textbox.insert(END,"GPSDO Communications Initiated\n")
-                #main_script.MainUi.gpsdo_textbox.yview(END)
-                #print "GPSDO Communications Initiated"
-                print("GPSDO ID :", gpsdoID)
-                self.gpsdoDetected = True
-             except Exception as e:
-                print(str(e))
-                #main_script.MainUi.gpsdo_textbox.insert(END,"GPSDO Communication Failed\n")
-                print("GPSDO Communication Failed")
-                self.gpsdoDetected = False
-    
+             print( "GPSDO Setup Started")
+             self.GPSDO_Conn = ptsip.GPS(self.GPSDO_SER)
+                               
     
     def _passCommand(self, command):     #pass command to GPSDO and display response in GPSDO response textbox
         com = str(command + "\r")
@@ -168,7 +178,8 @@ class SpecGPSDO():
         return response          
     
     def _readLine(self):
-        return str(self.GPSDO_SER.readline().decode("utf-8"))
+        #return str(self.GPSDO_SER.readline().decode("utf-8"))
+        return self.GPSDO_SER.read()
      
     def sendQuery(self, query):         # method for querying GPSDO 
         self.GPSDO_SER.write(query)
@@ -183,6 +194,8 @@ class SpecGPSDO():
       return self.collectResponse("SN") 
       
     def setGpsCom(self, flag):
+        pass
+        '''
         if flag == True:
             self.collectResponse('@@@@GPS')
             while(True):
@@ -191,6 +204,7 @@ class SpecGPSDO():
         elif (flag == False):
             self.collectResponse('@@@@')
             #print "GPS Mode Disabled"
+        '''   
             
     def setTrack(self, flag):
         if flag == True:
@@ -213,6 +227,7 @@ class SpecGPSDO():
                 print("PPSOUT synchronisation to PPSINT unset \n")
     
     def isTrackingSet(self):
+        '''
         response = self.collectResponse('TR?')
         if response[:-2] == "1":
                 print("Tracking to PPSREF is Set\n")
@@ -220,9 +235,11 @@ class SpecGPSDO():
         if response[:-2] == "0":
                 print("Tracking to PPSREF not set \n")
                 return False
+        '''
         return False
 
     def isSyncSet(self):
+        '''
         response = self.collectResponse('SY?')
         if response[:-2] == "1":
             print("PPSOUT synchronisation to PPSINT set \n")
@@ -230,6 +247,7 @@ class SpecGPSDO():
         if response[:-2] == "0":
             print("PPSOUT synchronisation to PPSINT not set \n")
             return False
+        '''
         return False
      
     def getPPSPulseWidth(self):
@@ -240,6 +258,7 @@ class SpecGPSDO():
          return self.PPSPulseWidth  
                                    
     def stopBeating(self):
+        '''
         response = "0"
         while (response != ""):
           self.collectResponse("BT0")
@@ -249,7 +268,9 @@ class SpecGPSDO():
           response = self._readLine()
           if not response: break
         #print "Stopped Beating GPSDO Messages"
-      
+        '''
+        pass
+    
     def getGpsdoStatus(self):
          x= str(self.collectResponse('ST')[0:1])
          return _decodeGPSDOStatus(x)
@@ -315,9 +336,6 @@ class SpecGPSDO():
     def pollGpsdoMetrics(self,flag):
       if flag:
           self.hasPolled = True
-          self.collectResponse("BTA")
-          self.collectResponse("MAW0BB0")
-          self.collectResponse("MAW0C10")
           self.PPSMetrics = threading.Thread(target=self.PPSMetricsPoller)
           self.PPSMetrics.start()
       if not flag:
@@ -332,82 +350,107 @@ class SpecGPSDO():
       self.PPSMetrics = threading.currentThread()
       while (getattr(self.PPSMetrics, "do_run", True)):
         try:
-          response = self._readLine() 
-          #print(response)
-          if (response[0:6] == "$PTNTA"):
-            self.decodePTNTA(response)
-          elif (response[0:6] == "$PTNTS"):
-            self.decodePTNTS(response)
-          elif (response[0:6] == "$GPRMC"):
-            self.decodeGPRMC(response)
+            report = self.GPSDO_Conn.read()
+            if len(report) == 0:
+                continue 
+            elif isinstance(report[0], str):
+                continue 
+            #print(report)
+            # Analyse report id to deterimine packet type
+            report_id = report[0]
+            #print(hex(report_id))     
+            # Timing related packets - from power
+            if report_id == 0x8f: 
+                if report[1] == 0xAB: # Primary Timing Packet
+                    self._decodePrimaryTimingPacket(report)
+                elif report[1] == 0xAC: # Supplemental Timing Packet
+                    self._decodeSupplementalTimingPacket(report)
+       
         except Exception as e:
-          pass
-          #print str(e)
+          print(str(e))
         time.sleep(0.2)
       #print "Stopping PPSMetricsPoller"
 
 
-    def decodePTNTA(self, response):
-       responseArray = response.split(",")
-       
-       #Date and time
-       self.GpsDateTime = int(responseArray[1]);
-       newEpochTime = _dateTimeToEpoch(responseArray[1])
-       if (((newEpochTime - self.epochGpsDateTime) != 1) and (self.firstQuery == False)):
-          print("Error in date and time from GPSDO")
-          print(newEpochTime - self.epochGpsDateTime)
-       self.epochGpsDateTime = newEpochTime
-       self.firstQuery = False
-       #print( "GPS Time : ", self.GpsDateTime)
-       
-       #Oscilator Quality 
-       if (responseArray[2]=="0"):
-          self.DisapliningStatus = "Warming Up"
-       elif (responseArray[2]=="1"):
-          self.DisapliningStatus = "Freerun"
-       elif (responseArray[2]=="2"):
-          self.DisapliningStatus = "Disciplined"
-       
-        #PPSREF-PPSInT Interval
-       val = int(responseArray[4])
-       if val < 499999999:
-         self.EffTimeInt = int(responseArray[4])
-       else:
-         self.EffTimeInt = int(responseArray[4])-999999999
-       
-        #Fine Phase Comparator
-       self.FinePhaseComp = int(responseArray[5])
-       
-       #GPSDO Status
-       self.Status = _decodeGPSDOStatus(str(responseArray[6]))
-       
-       #GPS Vaalidity 
-       GPSStatus = responseArray[8].split("*")
-       if (GPSStatus[0] == "0"):
-          self.GPSStatus = "Invalid"
-       elif (GPSStatus[0] == "1"):
-          self.GPSStatus = "Manual"
-       elif (GPSStatus[0] == "2"):
-          self.GPSStatus = "Older than 240 hrs"
-       elif (GPSStatus[0] == "3"):
-          self.GPSStatus = "Fresh"
-       
-    def decodePTNTS(self,response):
-      responseArray = response.split(",") 
-      self.Status = _decodeGPSDOStatus(str(responseArray[2]))
-      self.CurrentFreq = float.fromhex(responseArray[3])
-      self.HoldoverFreq = float.fromhex(responseArray[4])
-      if (responseArray[8] == "0"):
-         self.ConstantMode = "Fixed"
-      elif (responseArray[8] == "1"):
-         self.ConstantMode = "Auto"
-      self.ConstantValue = responseArray[9] + " s"
-      self.PPSRefSigma = float(responseArray[10])
-      
-    def decodeGPRMC(self,response):
-       responseArray = response.split(",") 
-       self.Latitude =  responseArray[3] 
-       self.LatitudeLabel = responseArray[4]
-       self.Longitude = responseArray[5]
-       self.LongitudeLabel = responseArray[6]
-       
+    def _decodePrimaryTimingPacket(self,report):
+              # decode date and time 
+              self.GpsDateTime = str(report[11])+str(report[10])+str(report[9])+str(report[8])+str(report[7])+str(report[6])
+              #print(self.GpsDateTime)
+              
+              # convert date and time to unix time
+              self.epochGpsDateTime = int(_dateTimeToEpoch(self.GpsDateTime))
+              #print(self.epochGpsDateTime)
+              
+              # Timing Flag
+              timingFlag = bitfield(report[5])
+              #print(report[5])
+              #print(timingFlag)
+              if timingFlag[0] == 0:
+                     self.timeSource = 'GPS'
+              else : self.timeSource = 'UTC'
+              if timingFlag[1] == 0:
+                     self.ppsSource = 'GPS'
+              else : self.ppsSource = 'UTC'                     
+              if timingFlag[2] == 0:
+                     self.isTimeSet = True
+              else : self.isTimeSet = False             
+              if timingFlag[3] == 0:
+                     self.haveUTCinfo = True
+              else : self.haveUTCinfo = False              
+              if timingFlag[4] == 0:
+                     self.timeSetSource = 'GPS'
+              else : self.haveSetSource = 'User'
+
+
+    def _decodeSupplementalTimingPacket(self,report):
+            # receiver mode - New
+              self.GPSReceiverMode = _decodeGPSReceiverMode(str(report[2]))
+            # discipling mode - GPSDO Status
+              self.Status = _decodeDisciplingMode(str(report[3]))
+            # self Survey - New
+              self.SelfSurveyProgress = str(report[4])
+            # holdover duration (s) - New
+              self.HoldoverDuration = str(report[5])
+            # critical alarms - New
+                
+            # minor alarms - New 
+            
+            # gps decoding status - GPS Status
+              self.GPSStatus = _decodeGPSStatus(str(report[8]))
+            # Disciplining activity - Disciplining Status
+              self.DiscipliningStatus = _decodeDiscapliningActivity(str(report[9]))
+            # PPS offset PPSREF to PPSOUT (ns) 
+              self.FinePhaseComp = int(report[12])
+            # clock offset (ppb) - New
+              self.clockOffsetPPB = int(report[13])
+            # DAC value 
+            
+            # DAC voltage (v)
+            
+            # Temperature (degrees C)
+            
+            # Latitude 
+              lat = report[17]*(180/math.pi)
+              self.Latitude = float(lat)
+              if lat >= 0 :
+                  self.LatitudeLabel = "N"
+              else :
+                 self.LatitudeLabel = "S"
+            # Longitude
+              lon = report[18]*(180/math.pi)
+              self.Longitude = float(lon)
+              if lon >= 0 :
+                  self.LongitudeLabel = "E"
+              else :
+                 self.LongitudeLabel = "W"
+            # Altitude
+              self.Altitude = str(report[19])
+            # PPS quantisation error (ns)
+                 #This value is not useful on a ThunderBolt E since the PPS output is derived from a
+                 #disciplined oscillator and therefore does not have any quantization error
+            
+
+            
+            
+def bitfield(n):
+    return [1 if digit=='1' else 0 for digit in bin(n)] # [1:] to chop off the "0b" part 

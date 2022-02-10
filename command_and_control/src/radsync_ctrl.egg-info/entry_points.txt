@@ -1,0 +1,3 @@
+[console_scripts]
+radsync = radsync_ctrl.main_script:main
+
