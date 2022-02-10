@@ -48,6 +48,7 @@ import csv
 #import from RadSync src folder
 from . import trigger_control
 from . import grclok_1500
+from . import trimble_thunderbolt_e
 from . import network_utils
 from . import main_ui_window
 from . import radsync_network_interface as raddic
@@ -233,7 +234,9 @@ def main():
     args = parse_cmdline_args()
     
     # Start GPSDO service
-    GPSDO = grclok_1500.SpecGPSDO(True) # Create GPSDO instance
+    # GPSDO = grclok_1500.SpecGPSDO(True) # Create GPSDO instance
+    GPSDO = trimble_thunderbolt_e.ThunderboltGPSDO(True) # Create GPSDO instance
+
     
     if args.node == 0:
         #Initialise Trigger
@@ -242,8 +245,8 @@ def main():
         time.sleep(5)
         
         # Start server to serve connections to RadSyn Slaves and Arestor clients 
-        Server = network_utils.MasterRadSyncServer()
-        Server.start_server()
+        #Server = network_utils.MasterRadSyncServer()
+        #Server.start_server()
     
     if args.node == 1:
         #Initialise Trigger
@@ -258,10 +261,10 @@ def main():
     MainUi.mGui.protocol('WM_DELETE_WINDOW',exit_routine)
     
     #set RPI time to gps time - to delete when NTP server running
-    _set_system_time()
+    #_set_system_time()
     MainUi.set_poll_gpsdo(True)
     
-    System_tracker = sync_system_state(args.node)
+    #System_tracker = sync_system_state(args.node)
     
      
 
