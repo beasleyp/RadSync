@@ -46,19 +46,20 @@ class RadSyncUi():
         
         # Variables for Oscillator Data Frame
         self.gpsdo_status = StringVar()
-        self.rubidium_status = StringVar()
+        self.disciplining_status = StringVar()
         self.current_gpsdo_freq = StringVar()
         self.gpsdo_holdover_freq = StringVar()
         self.gpsdo_time_constant_mode = StringVar()
         self.gpsdo_time_constant_value = StringVar()
-       
+        self.gpsdo_holdover_duration = StringVar()
+        
         # Variables for GPS Receiver Data Frame
         self.gpsdo_latitude = StringVar()
         self.gpsdo_longitude = StringVar()
         self.gpsdo_altitude = StringVar()
         self.gpsdo_satellites = StringVar()
         self.gpsdo_tracking_info = StringVar()
-        self.gpsdo_gps_validity = StringVar()
+        self.gpsdo_gps_status = StringVar()
                 
         # Variables for checkboxes
         self.gpsdo_track_checkbox_state = IntVar()
@@ -227,18 +228,19 @@ class RadSyncUi():
        '''
        #Variables for Oscillator Data Frame
        self.gpsdo_status.set(main_script.GPSDO.Status)
-       self.rubidium_status.set(main_script.GPSDO.RbStatus)
+       self.disciplining_status.set(main_script.GPSDO.DiscipliningStatus)
        self.current_gpsdo_freq.set(main_script.GPSDO.CurrentFreq)
        self.gpsdo_holdover_freq.set(main_script.GPSDO.HoldoverFreq)
        self.gpsdo_time_constant_mode.set(main_script.GPSDO.ConstantMode)
        self.gpsdo_time_constant_value.set(main_script.GPSDO.ConstantValue)
+       self.gpsdo_holdover_duration.set(main_script.GPSDO.HoldoverDuration)
        #Variables for GPS Receiver Data Frame
-       self.gpsdo_latitude.set(main_script.GPSDO.Latitude + " " + main_script.GPSDO.LatitudeLabel)
-       self.gpsdo_longitude.set(main_script.GPSDO.Longitude + " " + main_script.GPSDO.LongitudeLabel)
+       self.gpsdo_latitude.set(str((round(main_script.GPSDO.Latitude,8))) + " " + main_script.GPSDO.LatitudeLabel)
+       self.gpsdo_longitude.set(str((round(main_script.GPSDO.Longitude,8))) + " " + main_script.GPSDO.LongitudeLabel)
        #self.gpsdo_altitude.set(GPSDO.Altitude)
        #self.gpsdo_satellites.set(GPSDO.SatellitesPPS Error Items)
        #self.gpsdo_tracking_info.set(GPSDO.Tracking)
-       self.gpsdo_gps_validity.set(main_script.GPSDO.Validity)
+       self.gpsdo_gps_status.set(main_script.GPSDO.GPSStatus)
        self.mGui.after(1000, self.update_gpsdo_metrics)
        if self.save_gpsdo_metrics_flag:
            main_script.save_gpsdo_metrics_to_file()
@@ -401,8 +403,8 @@ class RadSyncUi():
         mlabel = Label(oscillator_frame, text="Oscillator Information",font=("Arial",11)).grid(row=0,column=0,columnspan=2,padx=xpad,pady=ypad)
         mlabel = Label(oscillator_frame,text="GPSDO Status: ",width=labelw,justify=LEFT,anchor="w").grid(row=2,column=0,sticky=W,padx=xpad,pady=ypad)
         mStatus = Label(oscillator_frame,textvariable=self.gpsdo_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=2,column=1,sticky=W,padx=xpad,pady=ypad)
-        mlabel = Label(oscillator_frame,text="Rb Status: ",width=labelw,justify=LEFT,anchor="w").grid(row=3,column=0,sticky=W,padx=xpad,pady=ypad)
-        mRbStatus = Label(oscillator_frame,textvariable=self.rubidium_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=3,column=1, sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(oscillator_frame,text="Disciplining Status: ",width=labelw,justify=LEFT,anchor="w").grid(row=3,column=0,sticky=W,padx=xpad,pady=ypad)
+        mDisapliningStatus = Label(oscillator_frame,textvariable=self.disciplining_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=3,column=1, sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(oscillator_frame,text="Current Freq:  ",width=labelw,justify=LEFT,anchor="w").grid(row=4,column=0, sticky=W,padx=xpad,pady=ypad)
         mCurFreq = Label(oscillator_frame,textvariable=self.current_gpsdo_freq,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=4,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(oscillator_frame,text="Holdover Freq:  ",width=labelw,justify=LEFT,anchor="w").grid(row=5,column=0,sticky=W,padx=xpad,pady=ypad)
@@ -411,6 +413,8 @@ class RadSyncUi():
         mTimeConMode = Label(oscillator_frame,textvariable=self.gpsdo_time_constant_mode,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=6,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabelend = Label(oscillator_frame,text="Time Constant Value:  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
         mTimeConVal = Label(oscillator_frame,textvariable=self.gpsdo_time_constant_value,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=7,column=1,sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(oscillator_frame,text="Holdover Duration (s):  ",width=labelw,justify=LEFT,anchor="w").grid(row=8,column=0,sticky=W,padx=xpad,pady=ypad)
+        mHoldoverDur = Label(oscillator_frame,textvariable=self.gpsdo_holdover_duration,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=8,column=1,sticky=W,padx=xpad,pady=ypad)
         #End of Oscillator Frame
         
         
@@ -423,14 +427,14 @@ class RadSyncUi():
         mLatitude = Label(gpsReceiever_frame,textvariable=self.gpsdo_latitude,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=2,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="Longitude: ",width=labelw,justify=LEFT,anchor="w").grid(row=3,column=0,sticky=W,padx=xpad,pady=ypad)
         mLongitude = Label(gpsReceiever_frame,textvariable=self.gpsdo_longitude,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=3,column=1,sticky=W,padx=xpad,pady=ypad)
-        mlabel = Label(gpsReceiever_frame,text="Altitude:  ",width=labelw,justify=LEFT,anchor="w").grid(row=4,column=0, sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(gpsReceiever_frame,text="Altitude (WGS84):  ",width=labelw,justify=LEFT,anchor="w").grid(row=4,column=0, sticky=W,padx=xpad,pady=ypad)
         mAltitude = Label(gpsReceiever_frame,textvariable=self.gpsdo_altitude,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=4,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="Satellites:  ",width=labelw,justify=LEFT,anchor="w").grid(row=5,column=0,sticky=W,padx=xpad,pady=ypad)
         mSatellites = Label(gpsReceiever_frame,textvariable=self.gpsdo_satellites,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=5,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="Tracking:  ",width=labelw,justify=LEFT,anchor="w").grid(row=6,column=0, sticky=W,padx=xpad,pady=ypad)
         mTracking = Label(gpsReceiever_frame,textvariable=self.gpsdo_tracking_info,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=6,column=1,sticky=W,padx=xpad,pady=ypad)
-        mlabel = Label(gpsReceiever_frame,text="GPS Validitiy:  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
-        mValididty = Label(gpsReceiever_frame,textvariable=self.gpsdo_gps_validity,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=7,column=1,sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(gpsReceiever_frame,text="GPS Status:  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
+        mValididty = Label(gpsReceiever_frame,textvariable=self.gpsdo_gps_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=7,column=1,sticky=W,padx=xpad,pady=ypad)
         #End of GPS Receiever Frame
         
         #Setup Figures
@@ -545,16 +549,18 @@ class RadSyncUi():
         mlabel = Label(oscillator_frame, text="Oscillator Information",font=("Arial",11)).grid(row=0,column=0,columnspan=2,padx=xpad,pady=ypad)
         mlabel = Label(oscillator_frame,text="GPSDO Status: ",width=labelw,justify=LEFT,anchor="w").grid(row=2,column=0,sticky=W,padx=xpad,pady=ypad)
         mStatus = Label(oscillator_frame,textvariable=self.gpsdo_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=2,column=1,sticky=W,padx=xpad,pady=ypad)
-        mlabel = Label(oscillator_frame,text="Rb Status: ",width=labelw,justify=LEFT,anchor="w").grid(row=3,column=0,sticky=W,padx=xpad,pady=ypad)
-        mRbStatus = Label(oscillator_frame,textvariable=self.rubidium_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=3,column=1, sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(oscillator_frame,text="Disciplining Status: ",width=labelw,justify=LEFT,anchor="w").grid(row=3,column=0,sticky=W,padx=xpad,pady=ypad)
+        mDisapliningStatus = Label(oscillator_frame,textvariable=self.disciplining_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=3,column=1, sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(oscillator_frame,text="Current Freq:  ",width=labelw,justify=LEFT,anchor="w").grid(row=4,column=0, sticky=W,padx=xpad,pady=ypad)
         mCurFreq = Label(oscillator_frame,textvariable=self.current_gpsdo_freq,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=4,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(oscillator_frame,text="Holdover Freq:  ",width=labelw,justify=LEFT,anchor="w").grid(row=5,column=0,sticky=W,padx=xpad,pady=ypad)
         mHoldFreq = Label(oscillator_frame,textvariable=self.gpsdo_holdover_freq,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=5,column=1, sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(oscillator_frame,text="Time Constant Mode:  ",width=labelw,justify=LEFT,anchor="w").grid(row=6,column=0, sticky=W,padx=xpad,pady=ypad)
         mTimeConMode = Label(oscillator_frame,textvariable=self.gpsdo_time_constant_mode,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=6,column=1,sticky=W,padx=xpad,pady=ypad)
-        mlabelend = Label(oscillator_frame,text="Time Constant Value:  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
+        mlabelend = Label(oscillator_frame,text="Time Constant Value (s):  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
         mTimeConVal = Label(oscillator_frame,textvariable=self.gpsdo_time_constant_value,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=7,column=1,sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(oscillator_frame,text="Holdover Duration (s):  ",width=labelw,justify=LEFT,anchor="w").grid(row=8,column=0,sticky=W,padx=xpad,pady=ypad)
+        mHoldoverDur = Label(oscillator_frame,textvariable=self.gpsdo_holdover_duration,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=8,column=1,sticky=W,padx=xpad,pady=ypad)
         #End of Oscillator Frame
         
         
@@ -567,14 +573,14 @@ class RadSyncUi():
         mLatitude = Label(gpsReceiever_frame,textvariable=self.gpsdo_latitude,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=2,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="Longitude: ",width=labelw,justify=LEFT,anchor="w").grid(row=3,column=0,sticky=W,padx=xpad,pady=ypad)
         mLongitude = Label(gpsReceiever_frame,textvariable=self.gpsdo_longitude,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=3,column=1,sticky=W,padx=xpad,pady=ypad)
-        mlabel = Label(gpsReceiever_frame,text="Altitude:  ",width=labelw,justify=LEFT,anchor="w").grid(row=4,column=0, sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(gpsReceiever_frame,text="Altitude (WGS84):  ",width=labelw,justify=LEFT,anchor="w").grid(row=4,column=0, sticky=W,padx=xpad,pady=ypad)
         mAltitude = Label(gpsReceiever_frame,textvariable=self.gpsdo_altitude,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=4,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="Satellites:  ",width=labelw,justify=LEFT,anchor="w").grid(row=5,column=0,sticky=W,padx=xpad,pady=ypad)
         mSatellites = Label(gpsReceiever_frame,textvariable=self.gpsdo_satellites,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=5,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="Tracking:  ",width=labelw,justify=LEFT,anchor="w").grid(row=6,column=0, sticky=W,padx=xpad,pady=ypad)
         mTracking = Label(gpsReceiever_frame,textvariable=self.gpsdo_tracking_info,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=6,column=1,sticky=W,padx=xpad,pady=ypad)
-        mlabel = Label(gpsReceiever_frame,text="GPS Validitiy:  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
-        mValididty = Label(gpsReceiever_frame,textvariable=self.gpsdo_gps_validity,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=7,column=1,sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(gpsReceiever_frame,text="GPS Status:  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
+        mValididty = Label(gpsReceiever_frame,textvariable=self.gpsdo_gps_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=7,column=1,sticky=W,padx=xpad,pady=ypad)
         #End of GPS Receiever Frame
         
         #Setup Figures

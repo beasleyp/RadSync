@@ -145,7 +145,7 @@ functions to deal with saving gpsdo metrics to file
 
 def setup_file_to_save_gpsdo_metics(flag):
   global gpsdo_metrics_writer, gpsdo_metrics_file
-  header = ['GPS Time','epoch Time','GPSDO Status','RB Status','Current Freq','Holdover Freq','Time Constant Mode','Time Constant Value','Latitude','N/S','Longitude','E/W','Validiity','Fine Phase Comparator','Effective Time Interval','PPSREF sigma']
+  header = ['GPS Time','epoch Time','GPSDO Status','RB Status','Current Freq','Holdover Freq','Time Constant Mode','Time Constant Value','Latitude','N/S','Longitude','E/W','GPS Status','Fine Phase Comparator','Effective Time Interval','PPSREF sigma']
   if flag:
     print("Open file for saving GPSDO metrics")
     now = datetime.datetime.now()
@@ -162,7 +162,7 @@ def setup_file_to_save_gpsdo_metics(flag):
       epoch_date
 def save_gpsdo_metrics_to_file():
       global gpsdo_metrics_writer, gpsdo_metrics_file
-      gpsdo_metrics_writer.writerow([GPSDO.GpsDateTime,GPSDO.epochGpsDateTime,GPSDO.Status,GPSDO.RbStatus,GPSDO.CurrentFreq,GPSDO.HoldoverFreq,GPSDO.ConstantMode,GPSDO.ConstantValue,GPSDO.Latitude,GPSDO.LatitudeLabel,GPSDO.Longitude,GPSDO.LongitudeLabel,GPSDO.Validity,GPSDO.FinePhaseComp,GPSDO.EffTimeInt,GPSDO.PPSRefSigma])
+      gpsdo_metrics_writer.writerow([GPSDO.GpsDateTime,GPSDO.epochGpsDateTime,GPSDO.Status,GPSDO.DiscipliningStatus,GPSDO.CurrentFreq,GPSDO.HoldoverFreq,GPSDO.ConstantMode,GPSDO.ConstantValue,GPSDO.Latitude,GPSDO.LatitudeLabel,GPSDO.Longitude,GPSDO.LongitudeLabel,GPSDO.GPSStatus,GPSDO.FinePhaseComp,GPSDO.EffTimeInt,GPSDO.PPSRefSigma])
       
 
 class sync_system_state():

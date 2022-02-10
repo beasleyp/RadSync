@@ -25,20 +25,55 @@ import time
 from tkinter import *
 import datetime
 import ptsip
+import math
 
-def _decodeGPSDOStatus(x):
+def _decodeGPSReceiverMode(x):
       return {
-        '0' : "Warming Up",
-        '1' : "Tracking Set Up",
-        '2' : "Tracking PPS REF",
-        '3' : "Sync to PPS REF",
-        '4' : "Free Run",
-        '5' : "PPS REF Unstable",
-        '6' : "No PPS REF",
-        '7' : "Frozen",
-        '8' : "Factory Diagnostic",
-        '9' : "Searching RB Line...",
+        '0' : "Auto (2D/3D)",
+        '1' : "Single Sat (Time)",
+        '3' : "Horizontal (2D)",
+        '4' : "Full Position (3D)",
+        '7' : "Over_Det Clock",
         }[x]
+      
+def _decodeDisciplingMode(x):   
+       return {
+        '0' : "Locked to GPS (Normal)",
+        '1' : "Power Up",
+        '2' : "Auto Holdover",
+        '3' : "Manual Holdover",
+        '4' : "Recovery",
+        '5' : "invlaid state",
+        '6' : "Disciplining Disabled",
+        }[x]
+
+def _decodeGPSStatus(x):   
+       return {
+        '0' : "Doing Fixes",
+        '1' : "No GPS Time",
+        '3' : "PDOP too high",
+        '8' : "No usable Sats",
+        '9' : "1 Sat usable",
+        '10' : "2 Sat usable",
+        '11' : "3 Sat usable",
+        '12' : "Cur Sat unusable",
+        '16' : "TRAIM rej fix",
+        }[x]      
+
+def _decodeDiscapliningActivity(x):   
+       return {
+        '0' : "Phase Locking",
+        '1' : "Oscillator warm-up",
+        '2' : "Frequency Locking",
+        '3' : "Placing PPS",
+        '4' : "Init loop filter",
+        '5' : "Compensating OCXO",
+        '6' : "Inactive",
+        '7' : "Not used",
+        '8' : "Recovery Mode",
+        '9' : "Cal/Ctrl Volt",
+        }[x]      
+
 
 def _dateTimeToEpoch(dateTime):
         p = '%Y%m%d%H%M%S'
@@ -84,25 +119,29 @@ class ThunderboltGPSDO():
       self.RawResponse = ""
       #Variables for Oscillator Data Frame
       self.Status =  ""
-      self.RbStatus = ""
+      self.DiscipliningStatus = ""
       self.CurrentFreq = ""
       self.HoldoverFreq = ""
       self.ConstantMode = ""
       self.ConstantValue = ""
+      self.HoldoverDuration = ""
       #Variables for GPS Receiver Data Frame
-      self.Latitude =  ""
+      self.Latitude =  0
       self.LatitudeLabel = ""
-      self.Longitude =  ""
+      self.Longitude =  0
       self.LongitudeLabel = ""
       self.Altitude =  ""
       self.Satellites = ""
       self.Tracking = ""
-      self.Validity = ""
+      self.GPSStatus = ""
+      self.GPSReceiverMode = "" # New
+      self.SelfSurveyProgress = "" # New
       #PPS Error Related Metrics 
       self.hasPolled = False
       self.PPSRefSigma = 0
       self.FinePhaseComp = 0
       self.EffTimeInt = 0
+      self.clockOffsetPPB = 0 # New 
       #General GPSDO Metrics
       self.PPSPulseWidth = 0
       self.GpsDateTime = 0
@@ -319,14 +358,13 @@ class ThunderboltGPSDO():
             #print(report)
             # Analyse report id to deterimine packet type
             report_id = report[0]
-            #print(hex(report_id))  
-            
+            #print(hex(report_id))     
             # Timing related packets - from power
             if report_id == 0x8f: 
                 if report[1] == 0xAB: # Primary Timing Packet
                     self._decodePrimaryTimingPacket(report)
                 elif report[1] == 0xAC: # Supplemental Timing Packet
-                    pass
+                    self._decodeSupplementalTimingPacket(report)
        
         except Exception as e:
           print(str(e))
@@ -337,34 +375,82 @@ class ThunderboltGPSDO():
     def _decodePrimaryTimingPacket(self,report):
               # decode date and time 
               self.GpsDateTime = str(report[11])+str(report[10])+str(report[9])+str(report[8])+str(report[7])+str(report[6])
-              print(self.GpsDateTime)
+              #print(self.GpsDateTime)
+              
               # convert date and time to unix time
               self.epochGpsDateTime = int(_dateTimeToEpoch(self.GpsDateTime))
-              print(self.epochGpsDateTime)
-        
+              #print(self.epochGpsDateTime)
+              
               # Timing Flag
               timingFlag = bitfield(report[5])
-              print(timingFlag)
+              #print(report[5])
+              #print(timingFlag)
               if timingFlag[0] == 0:
                      self.timeSource = 'GPS'
               else : self.timeSource = 'UTC'
-                  
               if timingFlag[1] == 0:
                      self.ppsSource = 'GPS'
-              else : self.ppsSource = 'UTC'
-                     
+              else : self.ppsSource = 'UTC'                     
               if timingFlag[2] == 0:
                      self.isTimeSet = True
-              else : self.isTimeSet = False
-              
+              else : self.isTimeSet = False             
               if timingFlag[3] == 0:
                      self.haveUTCinfo = True
-              else : self.haveUTCinfo = False
-              
+              else : self.haveUTCinfo = False              
               if timingFlag[4] == 0:
                      self.timeSetSource = 'GPS'
               else : self.haveSetSource = 'User'
-                               
-              
+
+
+    def _decodeSupplementalTimingPacket(self,report):
+            # receiver mode - New
+              self.GPSReceiverMode = _decodeGPSReceiverMode(str(report[2]))
+            # discipling mode - GPSDO Status
+              self.Status = _decodeDisciplingMode(str(report[3]))
+            # self Survey - New
+              self.SelfSurveyProgress = str(report[4])
+            # holdover duration (s) - New
+              self.HoldoverDuration = str(report[5])
+            # critical alarms - New
+                
+            # minor alarms - New 
+            
+            # gps decoding status - GPS Status
+              self.GPSStatus = _decodeGPSStatus(str(report[8]))
+            # Disciplining activity - Disciplining Status
+              self.DiscipliningStatus = _decodeDiscapliningActivity(str(report[9]))
+            # PPS offset PPSREF to PPSOUT (ns) 
+              self.FinePhaseComp = int(report[12])
+            # clock offset (ppb) - New
+              self.clockOffsetPPB = int(report[13])
+            # DAC value 
+            
+            # DAC voltage (v)
+            
+            # Temperature (degrees C)
+            
+            # Latitude 
+              lat = report[17]*(180/math.pi)
+              self.Latitude = float(lat)
+              if lat >= 0 :
+                  self.LatitudeLabel = "N"
+              else :
+                 self.LatitudeLabel = "S"
+            # Longitude
+              lon = report[18]*(180/math.pi)
+              self.Longitude = float(lon)
+              if lon >= 0 :
+                  self.LongitudeLabel = "E"
+              else :
+                 self.LongitudeLabel = "W"
+            # Altitude
+              self.Altitude = str(report[19])
+            # PPS quantisation error (ns)
+                 #This value is not useful on a ThunderBolt E since the PPS output is derived from a
+                 #disciplined oscillator and therefore does not have any quantization error
+            
+
+            
+            
 def bitfield(n):
-    return [1 if digit=='1' else 0 for digit in bin(n)[1:]] # [2:] to chop off the "0b" part 
+    return [1 if digit=='1' else 0 for digit in bin(n)] # [1:] to chop off the "0b" part 
