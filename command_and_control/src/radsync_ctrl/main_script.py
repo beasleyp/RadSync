@@ -47,7 +47,7 @@ import csv
 
 #import from RadSync src folder
 from . import trigger_control
-from . import grclok_1500
+from . import lnr_clok_1500
 from . import trimble_thunderbolt_e
 from . import network_utils
 from . import main_ui_window
