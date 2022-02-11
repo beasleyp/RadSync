@@ -79,7 +79,7 @@ class SpecGPSDO():
       self.RBHeatingCurrentNorm = ""
       #Intialise tracking metrics     
       self.AlarmVal = ""
-      self.TrackingVal = ""
+      self.TrackingVal = "" 
       self.TauVal = ""
       self.CompOffVal = ""
       self.RawAdjVal = ""
@@ -97,9 +97,8 @@ class SpecGPSDO():
       self.LatitudeLabel = ""
       self.Longitude =  ""
       self.LongitudeLabel = ""
-      self.Altitude =  ""
-      self.Satellites = ""
-      self.Tracking = ""
+      self.Altitude =  ""  # currently unused in lnr_clok_1500
+      self.Satellites = "" # currently unused in lnr_clok_1500
       self.GPSStatus = ""
       self.GPSReceiverMode = "" # Trimble Related
       self.SelfSurveyProgress = "" # Trimble Related 

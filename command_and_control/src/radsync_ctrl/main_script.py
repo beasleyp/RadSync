@@ -28,7 +28,6 @@ import argparse
 import datetime
 from time import * # double check this
 import os
-import RPi.GPIO as GPIO
 import time
 import sys
 
@@ -37,13 +36,9 @@ from tkinter import *
 #Gui Rekated imports 
 import matplotlib
 matplotlib.use("TkAgg")
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import matplotlib.animation as animation
-from matplotlib import style
-from collections import deque
-import numpy as np
+
 import csv
+from enum import Enum
 
 #import from RadSync src folder
 from . import trigger_control
@@ -131,31 +126,46 @@ def exit_routine(): # runs this routine upon exit
     GPSDO.pollGpsdoMetrics(False)
     GPSDO.GPSDO_SER.close()
     setup_file_to_save_gpsdo_metics(False)
+    '''
     if System_tracker.this_node == 0:
         Server.stop_server()
     else:
         Client.stop_client()
     os._exit(1)
-
+    '''
 
 def _set_system_time():
-  global system_time_set_flag
+  global system_time_set_flag, gpsdo_connected, GPSDO
   system_time_set_flag = False
   if (system_time_set_flag == False):
-    try:
-        GPSDO_Date = GPSDO.getGpsDate()
-        print('GPSDO_Date = ', GPSDO_Date)
-        GPSDO_Time = GPSDO.getGpsTime()
-        print('GPSDO_Time = ', GPSDO_Time)
-        TimeLength = len(GPSDO_Time) - 2
-        gpstime = GPSDO_Date[0:4] + GPSDO_Date[5:7] + GPSDO_Date[8:10] + " " + GPSDO_Time
-        print('GPSDO_date_time = ', gpstime)
-        os.system('sudo date -u --set="%s"'% gpstime)
-        print("System Time set to GPS time")
-        system_time_set_flag = True
-    except(Exception, e):
-      print(str(e))
-  
+      
+    if gpsdo_connected == GPSDOType.LNRCLOK1500 :
+        try:
+            GPSDO_Date = GPSDO.getGpsDate
+            print('GPSDO_Date = ', GPSDO_Date)
+            GPSDO_Time = GPSDO.getGpsTime()
+            print('GPSDO_Time = ', GPSDO_Time)
+            TimeLength = len(GPSDO_Time) - 2
+            gpstime = GPSDO_Date[0:4] + GPSDO_Date[5:7] + GPSDO_Date[8:10] + " " + GPSDO_Time
+            print('GPSDO_date_time = ', gpstime)
+            os.system('sudo date -u --set="%s"'% gpstime)
+            print("System Time set to GPS time")
+            system_time_set_flag = True
+        except Exception as  e:
+            print(str(e))
+    elif gpsdo_connected == GPSDOType.THUNDERBOLTE :
+        try:
+            
+            #GPSDO.epochGpsDateTime
+            gpstime = "@" + str(1644596668)
+            print(str(gpstime))
+            command = "sudo date -s " + gpstime 
+            os.system(command)
+            print("System Time set to GPS time")
+            system_time_set_flag = True
+        except Exception as  e:
+            print(str(e))
+        
 
 '''
 functions to deal with saving gpsdo metrics to file
@@ -163,7 +173,7 @@ functions to deal with saving gpsdo metrics to file
 
 def setup_file_to_save_gpsdo_metics(flag):
   global gpsdo_metrics_writer, gpsdo_metrics_file
-  header = ['GPS Time','epoch Time','GPSDO Status','RB Status','Current Freq','Holdover Freq','Time Constant Mode','Time Constant Value','Latitude','N/S','Longitude','E/W','GPS Status','Fine Phase Comparator','Effective Time Interval','PPSREF sigma']
+  header = ['GPS Time','epoch Time','GPSDO Status','RB Status','Current Freq','Holdover Freq','Time Constant Mode','Time Constant Value','Latitude','N/S','Longitude','E/W','Altitude (WGS84)','GPS Status','Fine Phase Comparator','Effective Time Interval','PPSREF sigma']
   if flag:
     print("Open file for saving GPSDO metrics")
     now = datetime.datetime.now()
@@ -176,11 +186,12 @@ def setup_file_to_save_gpsdo_metics(flag):
       gpsdo_metrics_file.close()
       print('Closing file for saving GPSDO metrics')
     except Exception as e:
-      pass     
-      epoch_date
+      print(str(e))
+         
+      
 def save_gpsdo_metrics_to_file():
       global gpsdo_metrics_writer, gpsdo_metrics_file
-      gpsdo_metrics_writer.writerow([GPSDO.GpsDateTime,GPSDO.epochGpsDateTime,GPSDO.Status,GPSDO.DiscipliningStatus,GPSDO.CurrentFreq,GPSDO.HoldoverFreq,GPSDO.ConstantMode,GPSDO.ConstantValue,GPSDO.Latitude,GPSDO.LatitudeLabel,GPSDO.Longitude,GPSDO.LongitudeLabel,GPSDO.GPSStatus,GPSDO.FinePhaseComp,GPSDO.EffTimeInt,GPSDO.PPSRefSigma])
+      gpsdo_metrics_writer.writerow([GPSDO.GpsDateTime,GPSDO.epochGpsDateTime,GPSDO.Status,GPSDO.DiscipliningStatus,GPSDO.CurrentFreq,GPSDO.HoldoverFreq,GPSDO.ConstantMode,GPSDO.ConstantValue,GPSDO.Latitude,GPSDO.LatitudeLabel,GPSDO.Longitude,GPSDO.LongitudeLabel,GPSDO.Altitude,GPSDO.GPSStatus,GPSDO.FinePhaseComp,GPSDO.EffTimeInt,GPSDO.PPSRefSigma])
       
 
 class sync_system_state():
@@ -209,7 +220,7 @@ class sync_system_state():
             pps_error = int(GPSDO.FinePhaseComp)
             if pps_error < 10:
                 self.this_node_gps_quality = raddic.good_gps_sync
-            elif pps_error < 20:
+            elif pps_error < 30:
                  self.this_node_gps_quality = raddic.nominal_gps_sync
             else:
                  self.this_node_gps_quality = raddic.poor_gps_sync
@@ -240,7 +251,35 @@ def parse_cmdline_args():
     if args.node >2 or args.node<0:
         parser.error("Please enter a valid node number either 0,1,2")
     return args
+
+class GPSDOType(Enum):
+        NOTCONNECTED = 1
+        LNRCLOK1500 = 2
+        THUNDERBOLTE = 3
+
+def _connect_to_gpsdo():
+    global gpsdo_connected
+    '''
+    attempt to connect to a GPSDO - LNRCLOK-1500 first, then Trimble.
+    '''
+    try:
+        GPSDO = lnr_clok_1500.SpecGPSDO(True) # Create GPSDO instance
+        gpsdo_connected = GPSDOType.LNRCLOK1500
+        print("Connected to Spectratime LNRCLOK-1500 GPSDO")
+        return GPSDO
+    except Exception as e:
+        gpsdo_connected = GPSDOType.NOTCONNECTED
     
+    if gpsdo_connected == GPSDOType.NOTCONNECTED:
+        try:
+            GPSDO = trimble_thunderbolt_e.ThunderboltGPSDO(True) # Create GPSDO instance           
+            gpsdo_connected = GPSDOType.THUNDERBOLTE
+            print("Connected to Trimble Thunderbolt E GPSDO")
+            return GPSDO
+        except Exception as e:
+            print(str(e))
+            print("Unable to connect to a GPSDO")
+         
 
 # *********************** Program Begin ********************************
 def main():
@@ -251,11 +290,9 @@ def main():
 
     args = parse_cmdline_args()
     
-    # Start GPSDO service
-    # GPSDO = grclok_1500.SpecGPSDO(True) # Create GPSDO instance
-    GPSDO = trimble_thunderbolt_e.ThunderboltGPSDO(True) # Create GPSDO instance
-
-
+    # Connect to a GPSDO
+    GPSDO = _connect_to_gpsdo()
+    
     if args.node == 0:
         #Initialise Trigger
         Trigger = trigger_control.Trigger(args.node) # Create trigger instance
@@ -279,13 +316,12 @@ def main():
     MainUi.mGui.protocol('WM_DELETE_WINDOW',exit_routine)
     
     #set RPI time to gps time - to delete when NTP server running
-    #_set_system_time()
-    MainUi.set_poll_gpsdo(True)
     
+    MainUi.set_poll_gpsdo(True)
 
-    #System_tracker = sync_system_state(args.node)
+    System_tracker = sync_system_state(args.node)
 
-     
+    #_set_system_time() 
 
     
     MainUi.mGui.mainloop()   

@@ -38,7 +38,7 @@ def _decodeGPSReceiverMode(x):
       
 def _decodeDisciplingMode(x):   
        return {
-        '0' : "Locked to GPS (Normal)",
+        '0' : "Locked to GPS",
         '1' : "Power Up",
         '2' : "Auto Holdover",
         '3' : "Manual Holdover",
@@ -130,9 +130,8 @@ class ThunderboltGPSDO():
       self.LatitudeLabel = ""
       self.Longitude =  0
       self.LongitudeLabel = ""
-      self.Altitude =  ""
+      self.Altitude =  -1
       self.Satellites = ""
-      self.Tracking = ""
       self.GPSStatus = ""
       self.GPSReceiverMode = "" # New
       self.SelfSurveyProgress = "" # New
@@ -160,7 +159,6 @@ class ThunderboltGPSDO():
                  stopbits = serial.STOPBITS_ONE,
                  bytesize = serial.EIGHTBITS,
                  timeout = 1)
-             print( "GPSDO Setup Started")
              self.GPSDO_Conn = ptsip.GPS(self.GPSDO_SER)
                                
     
@@ -342,7 +340,7 @@ class ThunderboltGPSDO():
        if self.hasPolled:
          self.PPSMetrics.do_run = False
          time.sleep(0.1)
-       self.stopBeating()
+       #self.stopBeating()
        self.firstQuery = True
 
 
@@ -351,14 +349,13 @@ class ThunderboltGPSDO():
       while (getattr(self.PPSMetrics, "do_run", True)):
         try:
             report = self.GPSDO_Conn.read()
+            #print(str(report))
             if len(report) == 0:
                 continue 
             elif isinstance(report[0], str):
                 continue 
-            #print(report)
             # Analyse report id to deterimine packet type
             report_id = report[0]
-            #print(hex(report_id))     
             # Timing related packets - from power
             if report_id == 0x8f: 
                 if report[1] == 0xAB: # Primary Timing Packet
@@ -385,6 +382,7 @@ class ThunderboltGPSDO():
               timingFlag = bitfield(report[5])
               #print(report[5])
               #print(timingFlag)
+              '''
               if timingFlag[0] == 0:
                      self.timeSource = 'GPS'
               else : self.timeSource = 'UTC'
@@ -400,16 +398,18 @@ class ThunderboltGPSDO():
               if timingFlag[4] == 0:
                      self.timeSetSource = 'GPS'
               else : self.haveSetSource = 'User'
+              '''
 
 
     def _decodeSupplementalTimingPacket(self,report):
-            # receiver mode - New
+
+            # receiver mode - Tracking - Done
               self.GPSReceiverMode = _decodeGPSReceiverMode(str(report[2]))
-            # discipling mode - GPSDO Status
+            # discipling mode - GPSDO Status - Done
               self.Status = _decodeDisciplingMode(str(report[3]))
-            # self Survey - New
+            # self Survey - Done
               self.SelfSurveyProgress = str(report[4])
-            # holdover duration (s) - New
+            # holdover duration (s) - Done
               self.HoldoverDuration = str(report[5])
             # critical alarms - New
                 
@@ -417,7 +417,7 @@ class ThunderboltGPSDO():
             
             # gps decoding status - GPS Status
               self.GPSStatus = _decodeGPSStatus(str(report[8]))
-            # Disciplining activity - Disciplining Status
+            # Disciplining activity - Disciplining Status - Done
               self.DiscipliningStatus = _decodeDiscapliningActivity(str(report[9]))
             # PPS offset PPSREF to PPSOUT (ns) 
               self.FinePhaseComp = int(report[12])
@@ -429,27 +429,26 @@ class ThunderboltGPSDO():
             
             # Temperature (degrees C)
             
-            # Latitude 
+            # Latitude - Done
               lat = report[17]*(180/math.pi)
               self.Latitude = float(lat)
               if lat >= 0 :
                   self.LatitudeLabel = "N"
               else :
                  self.LatitudeLabel = "S"
-            # Longitude
+            # Longitude - Done
               lon = report[18]*(180/math.pi)
               self.Longitude = float(lon)
               if lon >= 0 :
                   self.LongitudeLabel = "E"
               else :
                  self.LongitudeLabel = "W"
-            # Altitude
-              self.Altitude = str(report[19])
+            # Altitude - Done
+              self.Altitude = report[19]
             # PPS quantisation error (ns)
                  #This value is not useful on a ThunderBolt E since the PPS output is derived from a
                  #disciplined oscillator and therefore does not have any quantization error
             
-
             
             
 def bitfield(n):

@@ -60,6 +60,7 @@ class RadSyncUi():
         self.gpsdo_satellites = StringVar()
         self.gpsdo_tracking_info = StringVar()
         self.gpsdo_gps_status = StringVar()
+        self.self_survey_progress = StringVar()
                 
         # Variables for checkboxes
         self.gpsdo_track_checkbox_state = IntVar()
@@ -78,7 +79,7 @@ class RadSyncUi():
         self.trigger_countdown_text = StringVar()
     
         # Variables for PPSOUT Error Variables
-        self.pps_graphs_xaxis_length = 10 #60 * 2 # length of PPS Error Arrays graph time axis (default 2 mins)
+        self.pps_graphs_xaxis_length = 60 #* 2 # length of PPS Error Arrays graph time axis (default 2 mins)
         self.fine_phase_comparator_deque = deque(maxlen = self.pps_graphs_xaxis_length)
         self.effective_time_interval_deque = deque(maxlen = self.pps_graphs_xaxis_length)
         self.ppsref_sigma_deque = deque(maxlen = self.pps_graphs_xaxis_length)
@@ -240,11 +241,12 @@ class RadSyncUi():
        #Variables for GPS Receiver Data Frame
        self.gpsdo_latitude.set(str((round(main_script.GPSDO.Latitude,8))) + " " + main_script.GPSDO.LatitudeLabel)
        self.gpsdo_longitude.set(str((round(main_script.GPSDO.Longitude,8))) + " " + main_script.GPSDO.LongitudeLabel)
-       #self.gpsdo_altitude.set(GPSDO.Altitude)
+       self.gpsdo_altitude.set(str(round(main_script.GPSDO.Altitude,8)))
        #self.gpsdo_satellites.set(GPSDO.SatellitesPPS Error Items)
-       #self.gpsdo_tracking_info.set(GPSDO.Tracking)
+       self.gpsdo_tracking_info.set(str(main_script.GPSDO.GPSReceiverMode))
        self.gpsdo_gps_status.set(main_script.GPSDO.GPSStatus)
        self.mGui.after(1000, self.update_gpsdo_metrics)
+       self.self_survey_progress.set(str(main_script.GPSDO.SelfSurveyProgress) + " %")
        if self.save_gpsdo_metrics_flag:
            main_script.save_gpsdo_metrics_to_file()
     
@@ -443,6 +445,8 @@ class RadSyncUi():
         mTracking = Label(gpsReceiever_frame,textvariable=self.gpsdo_tracking_info,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=6,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="GPS Status:  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
         mValididty = Label(gpsReceiever_frame,textvariable=self.gpsdo_gps_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=7,column=1,sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(gpsReceiever_frame,text="Self-Survey Prog:  ",width=labelw,justify=LEFT,anchor="w").grid(row=8,column=0,sticky=W,padx=xpad,pady=ypad)
+        mSelfSurvey = Label(gpsReceiever_frame,textvariable=self.self_survey_progress,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=8,column=1,sticky=W,padx=xpad,pady=ypad)
         #End of GPS Receiever Frame
         
         #Setup Figures
@@ -451,7 +455,7 @@ class RadSyncUi():
         graph_frame.grid(row=2,column=0,columnspan=3,pady=10,padx=10)
         fpc_canvas = FigureCanvasTkAgg(fpc_figure,graph_frame)
         fpc_canvas.get_tk_widget().grid(row=0,column=0,sticky=W,pady=10,padx=10)
-        #ani = animation.FuncAnimation(fpc_figure, self.animate, interval=1000)
+        ani = animation.FuncAnimation(fpc_figure, self.animate, interval=1000)
         fpc_canvas.draw()
         # End of figures
         
@@ -589,6 +593,8 @@ class RadSyncUi():
         mTracking = Label(gpsReceiever_frame,textvariable=self.gpsdo_tracking_info,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=6,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="GPS Status:  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
         mValididty = Label(gpsReceiever_frame,textvariable=self.gpsdo_gps_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=7,column=1,sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(gpsReceiever_frame,text="Self-Survey Prog:  ",width=labelw,justify=LEFT,anchor="w").grid(row=8,column=0,sticky=W,padx=xpad,pady=ypad)
+        mSelfSurvey = Label(gpsReceiever_frame,textvariable=self.self_survey_progress,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=8,column=1,sticky=W,padx=xpad,pady=ypad)
         #End of GPS Receiever Frame
         
         #Setup Figures
