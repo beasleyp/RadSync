@@ -26,6 +26,7 @@ from tkinter import *
 import datetime
 import ptsip
 import math
+import numpy as np
 
 def _decodeGPSReceiverMode(x):
       return {
@@ -147,11 +148,11 @@ class ThunderboltGPSDO():
       self.epochGpsDateTime = 0
       #Get PPSOUT Pulse Width
       #self.getPPSPulseWidth()
+      self.minorAlarms = self.MinorAlarms()
       
             
     def _setupSerialCon(self):
       if (self.gpsdoPresent == True):
-         
              self.GPSDO_SER = serial.Serial(
                  port = '/dev/ttyUSB0',
                  baudrate = 9600,
@@ -366,7 +367,7 @@ class ThunderboltGPSDO():
         except Exception as e:
           print(str(e))
         time.sleep(0.2)
-      #print "Stopping PPSMetricsPoller"
+      print("Stopping PPSMetricsPoller")
 
 
     def _decodePrimaryTimingPacket(self,report):
@@ -414,7 +415,7 @@ class ThunderboltGPSDO():
             # critical alarms - New
                 
             # minor alarms - New 
-            
+              self.minorAlarms.updateMinorAlarms(bitfield(report[7]))
             # gps decoding status - GPS Status
               self.GPSStatus = _decodeGPSStatus(str(report[8]))
             # Disciplining activity - Disciplining Status - Done
@@ -448,8 +449,49 @@ class ThunderboltGPSDO():
             # PPS quantisation error (ns)
                  #This value is not useful on a ThunderBolt E since the PPS output is derived from a
                  #disciplined oscillator and therefore does not have any quantization error
-            
-            
-            
+
+      
+        
+    class MinorAlarms():
+        
+        def __init__(self):
+            self.updateMinorAlarms([0,0,0,0,0,0,0,0,0,0,0,0,0])
+    
+        def updateMinorAlarms(self, minor_alarms):
+              if minor_alarms[12] == 0:
+                     self.DACALARM = False
+              else : self.DACALARM = True
+              if minor_alarms[11] == 0:
+                     self.ANTENNAOPEN = False
+              else : self.ANTENNAOPEN = True                   
+              if minor_alarms[10] == 0:
+                     self.ANTENNASHORT = False
+              else : self.ANTENNASHORT = True         
+              if minor_alarms[9] == 0:
+                     self.NOSATS = False
+              else : self.NOSATS = True      
+              if minor_alarms[8] == 0:
+                     self.NODISCIPLINE = False
+              else : self.NODISCIPLINE = True
+              if minor_alarms[7] == 0:
+                     self.SURVEYIN = False
+              else : self.SURVEYIN = True
+              if minor_alarms[6] == 0:
+                     self.NOPOSITION = False
+              else : self.NOPOSITION = True                   
+              if minor_alarms[5] == 0:
+                     self.LEAPSECOND = False
+              else : self.LEAPSECOND = True         
+              if minor_alarms[3] == 0:
+                     self.POSQ = False
+              else : self.POSQ = True      
+              if minor_alarms[1] == 0:
+                     self.ALMANAC = False
+              else : self.ALMANAC = True
+              if minor_alarms[0] == 0:
+                     self.PPSNOTGEN = False
+              else : self.PPSNOTGEN = True
+           
+
 def bitfield(n):
     return [1 if digit=='1' else 0 for digit in bin(n)] # [1:] to chop off the "0b" part 

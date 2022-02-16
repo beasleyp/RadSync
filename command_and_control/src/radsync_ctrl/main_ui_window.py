@@ -100,6 +100,8 @@ class RadSyncUi():
             self.mGui.title("RadSync Node 1 - Slave Node Control Interface")
             self._setup_slave_ui_layout()
         self.update_gpsdo_metrics()
+        if main_script.gpsdo_connected == main_script.GPSDOType.THUNDERBOLTE:
+            self.update_trimble_alarms()
     
     '''
     GPSDO related control functions 
@@ -245,10 +247,60 @@ class RadSyncUi():
        #self.gpsdo_satellites.set(GPSDO.SatellitesPPS Error Items)
        self.gpsdo_tracking_info.set(str(main_script.GPSDO.GPSReceiverMode))
        self.gpsdo_gps_status.set(main_script.GPSDO.GPSStatus)
-       self.mGui.after(1000, self.update_gpsdo_metrics)
        self.self_survey_progress.set(str(main_script.GPSDO.SelfSurveyProgress) + " %")
+       self.mGui.after(1000, self.update_gpsdo_metrics) 
        if self.save_gpsdo_metrics_flag:
            main_script.save_gpsdo_metrics_to_file()
+    
+    def update_trimble_alarms(self):
+       # Minor Alarm Data Frame - Trimble only
+       # Dac near rail 
+       if main_script.GPSDO.minorAlarms.DACALARM == True:
+             self.dacCanvas.itemconfig(self.DAC_ALARM_IND, fill="red")
+       else: self.dacCanvas.itemconfig(self.DAC_ALARM_IND, fill="green")
+       # Antenna Open
+       if main_script.GPSDO.minorAlarms.ANTENNAOPEN == True:
+             self.openCanvas.itemconfig(self.AntennaOpen_ALARM_IND, fill="red") 
+       else: self.openCanvas.itemconfig(self.AntennaOpen_ALARM_IND, fill="green") 
+       # Antenna Shorted
+       if main_script.GPSDO.minorAlarms.ANTENNASHORT == True:
+             self.shortCanvas.itemconfig(self.AntennaShort_ALARM_IND, fill ="red")
+       else: self.shortCanvas.itemconfig(self.AntennaShort_ALARM_IND, fill ="green")
+       # Not tracking Sats
+       if main_script.GPSDO.minorAlarms.NOSATS == True:
+             self.noSatCanvas.itemconfig(self.N0SATs_ALARM_IND, fill="red")
+       else: self.noSatCanvas.itemconfig(self.N0SATs_ALARM_IND, fill="green")
+       # Not discaplining
+       if main_script.GPSDO.minorAlarms.NODISCIPLINE == True:
+             self.notDiscipiningCanvas.itemconfig(self.N0TDISCIPLINING_ALARM_IND, fill="red")
+       else: self.notDiscipiningCanvas.itemconfig(self.N0TDISCIPLINING_ALARM_IND, fill="green")
+       # Survey in process
+       if main_script.GPSDO.minorAlarms.SURVEYIN == True:
+             self.surveyCanvas.itemconfig(self.SURVEYIN_ALARM_IND, fill="red") 
+       else: self.surveyCanvas.itemconfig(self.SURVEYIN_ALARM_IND, fill="red")
+       # No stored Positon
+       if main_script.GPSDO.minorAlarms.NOPOSITION == True:
+             self.noPosCanvas.itemconfig(self.NOPOSITION_ALARM_IND, fill="red") 
+       else: self.noPosCanvas.itemconfig(self.NOPOSITION_ALARM_IND, fill="red") 
+       # Leap second pending
+       if main_script.GPSDO.minorAlarms.LEAPSECOND == True:
+             self.leapSCanvas.itemconfig(self.LEAPS_ALARM_IND, fill="red") 
+       else: self.leapSCanvas.itemconfig(self.LEAPS_ALARM_IND, fill="green") 
+       # Position Questionable
+       if main_script.GPSDO.minorAlarms.POSQ == True:
+             self.posQCanvas.itemconfig(self.POSITIONQ_ALARM_IND, fill="red")
+       else: self.posQCanvas.itemconfig(self.POSITIONQ_ALARM_IND, fill="red")
+        # Almanac not complete
+       if main_script.GPSDO.minorAlarms.ALMANAC == True:
+             self.almanacCanvas.itemconfig(self.ALMANAC_ALARM_IND, fill="red")
+       else: self.almanacCanvas.itemconfig(self.ALMANAC_ALARM_IND, fill="green")
+       # PPS not generated
+       if main_script.GPSDO.minorAlarms.PPSNOTGEN == True:
+             self.ppsCanvas.itemconfig(self.PPSNOTGEN_ALARM_IND, fill="red")
+       else: self.ppsCanvas.itemconfig(self.PPSNOTGEN_ALARM_IND, fill="green")
+       self.mGui.after(3000, self.update_trimble_alarms) 
+    
+    
     
     def setup_checkboxes(self):
         #setup GPSDO control check boxes
@@ -390,7 +442,7 @@ class RadSyncUi():
         
         #Toolbar Frame
         metrics_bar_frame = Frame(right_frame,highlightbackground="black", highlightthickness=2)
-        metrics_bar_frame.grid(row=1,column=0,pady=10,padx=10,sticky=N)
+        metrics_bar_frame.grid(row=0,column=0,pady=10,padx=10,sticky=N)
         
         GPSDO_Terminal = Button(metrics_bar_frame,text="GPSDO Parameters",command=grclok_1500_popout.LaunchTerminal())
         GPSDO_Terminal.grid(row=0,column=0,columnspan=2, pady=5, padx=10)
@@ -408,7 +460,7 @@ class RadSyncUi():
         
         #Oscillator Frame
         oscillator_frame = Frame(right_frame,width=300,height=300,highlightbackground="black", highlightthickness=2)
-        oscillator_frame.grid(row=1,column=1,pady=10,padx=10)
+        oscillator_frame.grid(row=0,column=1,pady=10,padx=10)
         #oscillator_frame.grid_propagate(0)
         mlabel = Label(oscillator_frame, text="Oscillator Information",font=("Arial",11)).grid(row=0,column=0,columnspan=2,padx=xpad,pady=ypad)
         mlabel = Label(oscillator_frame,text="GPSDO Status: ",width=labelw,justify=LEFT,anchor="w").grid(row=2,column=0,sticky=W,padx=xpad,pady=ypad)
@@ -430,7 +482,7 @@ class RadSyncUi():
         
         #GPS Receiver Frame
         gpsReceiever_frame = Frame(right_frame,width=300,height=300,highlightbackground="black", highlightthickness=2)
-        gpsReceiever_frame.grid(row=1,column=2,pady=10,padx=10)
+        gpsReceiever_frame.grid(row=0,column=2,pady=10,padx=10)
         #oscillator_frame.grid_propagate(0)
         mlabel = Label(gpsReceiever_frame, text="GPS Recevier Data",font=("Arial",11)).grid(row=0,column=0,columnspan=2,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="Latitude: ",width=labelw,justify=LEFT,anchor="w").grid(row=2,column=0,sticky=W,padx=xpad,pady=ypad)
@@ -449,17 +501,103 @@ class RadSyncUi():
         mSelfSurvey = Label(gpsReceiever_frame,textvariable=self.self_survey_progress,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=8,column=1,sticky=W,padx=xpad,pady=ypad)
         #End of GPS Receiever Frame
         
+        #Trimble Minor Alarm Frame
+        ind_canvas_height = 20
+        ind_canvas_width = 20
+        ind_pady =5
+        indpadx = 5
+        indy0 = 2
+        indx0 = 2
+        indx1 = 15
+        indy1 = 15
+        labelpadx = 5
+        labelpady = 5 
+        
+        minorAlarms_frame = Frame(right_frame,width=600,height=300,highlightbackground="black", highlightthickness=2)
+        minorAlarms_frame.grid(row=0,column=3,rowspan=3,columnspan=3, pady=10,padx=10, sticky = N)
+        mlabel = Label(minorAlarms_frame, text="GPS Receiver Alarms",font=("Arial",11)).grid(row=0,column=0,columnspan=2,padx=xpad,pady=ypad)
+        # DAC near rail
+        self.dacCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width=ind_canvas_width)
+        self.DAC_ALARM_IND = self.dacCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.dacCanvas.grid(row=1,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="DAC Near Rail",width=labelw,justify=LEFT,anchor="w").grid(row=1,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+
+        # Antenna open
+        self.openCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.AntennaOpen_ALARM_IND = self.openCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.openCanvas.grid(row=2,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Antennna Open",width=labelw,justify=LEFT,anchor="w").grid(row=2,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
+        # Antenna Shorted
+        self.shortCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.AntennaShort_ALARM_IND = self.shortCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.shortCanvas.grid(row=3,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Antennna Short",width=labelw,justify=LEFT,anchor="w").grid(row=3,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
+        # Not tracking Sats
+        self.noSatCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.N0SATs_ALARM_IND = self.noSatCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.noSatCanvas.grid(row=4,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Not Tracking Sats",width=labelw,justify=LEFT,anchor="w").grid(row=4,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
+        # Not discaplining
+        self.notDiscipiningCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.N0TDISCIPLINING_ALARM_IND = self.notDiscipiningCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.notDiscipiningCanvas.grid(row=5,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Disciplining Oscillator",width=labelw,justify=LEFT,anchor="w").grid(row=5,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        # Survey in process
+        self.surveyCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.SURVEYIN_ALARM_IND = self.surveyCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.surveyCanvas.grid(row=6,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Survey-In Progress",width=labelw,justify=LEFT,anchor="w").grid(row=6,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
+        # No stored Positon
+        self.noPosCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.NOPOSITION_ALARM_IND = self.noPosCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.noPosCanvas.grid(row=7,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="No Position Stored",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
+        # Leap second pending
+        self.leapSCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.LEAPS_ALARM_IND = self.leapSCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.leapSCanvas.grid(row=8,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Leap Second Pending",width=labelw,justify=LEFT,anchor="w").grid(row=8,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
+        # In test mode
+
+        # Position Questionable
+        self.posQCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.POSITIONQ_ALARM_IND = self.posQCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.posQCanvas.grid(row=9,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Position Questionable",width=labelw,justify=LEFT,anchor="w").grid(row=9,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
+        # Almanac not complete
+        self.almanacCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.ALMANAC_ALARM_IND = self.almanacCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.almanacCanvas.grid(row=10,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Almanac Incomplete",width=labelw,justify=LEFT,anchor="w").grid(row=10,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+    
+        # PPS not generated
+        self.ppsCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.PPSNOTGEN_ALARM_IND = self.ppsCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.ppsCanvas.grid(row=11,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="PPS Not Generated",width=labelw,justify=LEFT,anchor="w").grid(row=11,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
+        
         #Setup Figures
         fpc_figure, (self.fpco,self.etio,self.sigo) = plt.subplots(nrows=3, ncols=1, figsize=(14,8), dpi=75, constrained_layout=True)
         graph_frame = Frame(right_frame,highlightbackground="black", highlightthickness=2,bg="white")
         graph_frame.grid(row=2,column=0,columnspan=3,pady=10,padx=10)
         fpc_canvas = FigureCanvasTkAgg(fpc_figure,graph_frame)
         fpc_canvas.get_tk_widget().grid(row=0,column=0,sticky=W,pady=10,padx=10)
-        ani = animation.FuncAnimation(fpc_figure, self.animate, interval=1000)
+        #ani = animation.FuncAnimation(fpc_figure, self.animate, interval=1000)
         fpc_canvas.draw()
         # End of figures
         
-        
+# =============================================================================
+# =============================================================================
+# ============================================================================
+# =============================================================================
         
     def _setup_slave_ui_layout(self):
         '''
@@ -596,6 +734,8 @@ class RadSyncUi():
         mlabel = Label(gpsReceiever_frame,text="Self-Survey Prog:  ",width=labelw,justify=LEFT,anchor="w").grid(row=8,column=0,sticky=W,padx=xpad,pady=ypad)
         mSelfSurvey = Label(gpsReceiever_frame,textvariable=self.self_survey_progress,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=8,column=1,sticky=W,padx=xpad,pady=ypad)
         #End of GPS Receiever Frame
+        
+
         
         #Setup Figures
         fpc_figure, (self.fpco,self.etio,self.sigo) = plt.subplots(nrows=3, ncols=1, figsize=(14,8), dpi=75, constrained_layout=True)
