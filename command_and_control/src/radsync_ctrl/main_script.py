@@ -78,17 +78,25 @@ def handle_slave_trigger_ack(node_number,gps_sync_state):
         System_tracker.node_1_gps_quality = gps_sync_state
         #If node 2 is disconnected, or we have recieved its gps validity already, and arestor is connected send arestor trigger ack
         if ((System_tracker.node_2_connected == False) or (System_tracker.node_2_gps_quality != raddic.not_connected)) and (System_tracker.arestor_connected):
-            send_arestor_trigger_ack()
-            
+            send_arestor_trigger_ack(True)
+           
     if int(node_number) == 2:
         System_tracker.node_2_gps_quality = gps_sync_state
         #If node 1 is disconnected, or we have recieved its gps validity already, and arestor is connected send arestor trigger ack
         if ((System_tracker.node_1_connected == False) or (System_tracker.node_1_gps_quality != raddic.not_connected)) and System_tracker.arestor_connected:
-            send_arestor_trigger_ack()  
+            send_arestor_trigger_ack(True)  
     
-def send_arestor_trigger_ack():
-    message = raddic.create_arestor_trig_req_response(str(Trigger.unix_gps_trigger_deadline), System_tracker.get_node_gps_state(), System_tracker.node_1_gps_quality, System_tracker.node_2_gps_quality)
-    Server.send_to_arestor(message)
+    
+def send_arestor_trigger_ack(force_message):
+    # check to see if any other RadSync Nodes are connected. If not, send ack message to Arestor.
+    if int(System_tracker.this_node) == 0:
+        if ((System_tracker.node_1_connected == False) or (System_tracker.node_1_gps_quality != raddic.not_connected)) and ((System_tracker.node_2_connected == False) or (System_tracker.node_2_gps_quality != raddic.not_connected)) and System_tracker.arestor_connected:
+            message = raddic.create_arestor_trig_req_response(str(Trigger.unix_gps_trigger_deadline), System_tracker.get_node_gps_state(), System_tracker.node_1_gps_quality, System_tracker.node_2_gps_quality)
+            Server.send_to_arestor(message)
+    # regardless of what's connected send ack to arestor. Normally ran by 'handle_slave_trigger_ack' function.
+    if force_message == True:      
+        message = raddic.create_arestor_trig_req_response(str(Trigger.unix_gps_trigger_deadline), System_tracker.get_node_gps_state(), System_tracker.node_1_gps_quality, System_tracker.node_2_gps_quality)
+        Server.send_to_arestor(message)
         
 def handle_arestor_trigger_request(trigger_type,trigger_delay):
     '''
@@ -100,7 +108,8 @@ def handle_arestor_trigger_request(trigger_type,trigger_delay):
     # update the trigger selection
     Trigger.set_trigger_type()
     # setup a trigger in the trigger subsystem
-    Trigger.setTriggerPending(trigger_delay)
+    Trigger.setTriggerPending(trigger_delay,1)
+
     
 
 
@@ -122,7 +131,7 @@ def exit_routine(): # runs this routine upon exit
     global Server, System_tracker, Client
     MainUi.gpsdo_textbox.insert(END,"****Exiting Program****\n")
     MainUi.mGui.destroy() # close the window
-    #TCPServer.stopServer()
+    Server.stopServer()
     GPSDO.pollGpsdoMetrics(False)
     GPSDO.GPSDO_SER.close()
     setup_file_to_save_gpsdo_metics(False)
@@ -262,13 +271,24 @@ def _connect_to_gpsdo():
     '''
     attempt to connect to a GPSDO - LNRCLOK-1500 first, then Trimble.
     '''
+    GPSDO = lnr_clok_1500.SpecGPSDO(True) # Create GPSDO instance
+    gpsdo_connected = GPSDOType.LNRCLOK1500
+    print("Connected to Spectratime LNRCLOK-1500 GPSDO")
+    return GPSDO
+    '''
     try:
         GPSDO = lnr_clok_1500.SpecGPSDO(True) # Create GPSDO instance
         gpsdo_connected = GPSDOType.LNRCLOK1500
         print("Connected to Spectratime LNRCLOK-1500 GPSDO")
         return GPSDO
     except Exception as e:
-        gpsdo_connected = GPSDOType.NOTCONNECTED
+        print(str(e))
+        if GPSDO.gpsdoDetected == False:
+            gpsdo_connected = GPSDOType.NOTCONNECTED
+        else :
+            gpsdo_connected = GPSDOType.LNRCLOK1500
+            print("Connected to Spectratime LNRCLOK-1500 GPSDO")
+            return GPSDO
     
     if gpsdo_connected == GPSDOType.NOTCONNECTED:
         try:
@@ -279,7 +299,8 @@ def _connect_to_gpsdo():
         except Exception as e:
             print(str(e))
             print("Unable to connect to a GPSDO")
-         
+    '''
+
 
 # *********************** Program Begin ********************************
 def main():
@@ -299,9 +320,9 @@ def main():
         MainUi = main_ui_window.RadSyncUi(args.node)
         time.sleep(5)
         
-        # Start server to serve connections to RadSyn Slaves and Arestor clients 
-        #Server = network_utils.MasterRadSyncServer()
-        #Server.start_server()
+        #Start server to serve connections to RadSyn Slaves and Arestor clients 
+        Server = network_utils.MasterRadSyncServer()
+        Server.start_server()
     
     if args.node == 1:
         #Initialise Trigger
@@ -315,12 +336,11 @@ def main():
     MainUi.setup_checkboxes() 
     MainUi.mGui.protocol('WM_DELETE_WINDOW',exit_routine)
     
-    #set RPI time to gps time - to delete when NTP server running
-    
     MainUi.set_poll_gpsdo(True)
 
     System_tracker = sync_system_state(args.node)
-
+  
+    #set RPI time to gps time - to delete when NTP server running
     #_set_system_time() 
 
     

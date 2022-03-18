@@ -188,12 +188,19 @@ class RadSyncUi():
             time.sleep(1)
         self.trigger_time_entry_box.configure(state=DISABLED) # Disable the entry box
         trigger_delay = int(self.user_trigger_delay_input.get()) # get trigger delay from entry box
-        trigger_duration = int(self.user_trigger_duration_input.get()) # get trigger duration from entry box
-        
+        trigger_duration = self.user_trigger_duration_input.get() # get trigger duration from entry box
+        'if trigger delay is <`10s, set delay as 10s'
         if (trigger_delay < 10) or (trigger_delay == ""): #don't accept a trigger deadline less than 10s away.
           self.trigger_text_box.insert(END, "Minimum trigger delay is 10s;\nTrigger delay set to 10s; \n")
           self.trigger_text_box.yview(END)
           trigger_delay = 10
+        'if trigger duration is nan, set duration as 1s'
+        if (trigger_duration == ""): 
+          self.trigger_text_box.insert(END, "Trigger duraion od 1s default \n")
+          self.trigger_text_box.yview(END)
+          trigger_duration = 1
+        else:
+            trigger_duration = int(trigger_duration)
         # request a trigger from trigger routine with trigger_delay in s  
         main_script.Trigger.setTriggerPending(trigger_delay,trigger_duration)
         
@@ -455,7 +462,7 @@ class RadSyncUi():
         graph_frame.grid(row=2,column=0,columnspan=3,pady=10,padx=10)
         fpc_canvas = FigureCanvasTkAgg(fpc_figure,graph_frame)
         fpc_canvas.get_tk_widget().grid(row=0,column=0,sticky=W,pady=10,padx=10)
-        ani = animation.FuncAnimation(fpc_figure, self.animate, interval=1000)
+        #ani = animation.FuncAnimation(fpc_figure, self.animate, interval=1000)
         fpc_canvas.draw()
         # End of figures
         

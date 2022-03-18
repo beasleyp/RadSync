@@ -162,7 +162,7 @@ def create_arestor_trig_req_response(gps_unix_trigger_deadline, node_0_gps_quali
     '''
     function to create response message to send to arestor - only to be 
     used by RadSync
-    GPS time is 18s aheead of UTC; therefore unix_time_stamp has 18s removed to account for this
+    GPS time is 18s ahead of UTC; therefore unix_time_stamp has 18s removed to account for this
     '''
     utc_unix_trigger_deadline = float(gps_unix_trigger_deadline) - 18
     message = RadSync_master_trig_ack_prefix + Delimiter + str(utc_unix_trigger_deadline) + Delimiter + str(node_0_gps_quality) + Delimiter + str(node_1_gps_quality) + Delimiter + str(node_2_gps_quality)

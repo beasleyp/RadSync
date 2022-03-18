@@ -93,11 +93,11 @@ class SpecGPSDO():
       self.ConstantValue = ""
       self.HoldoverDuration = ""
       #Variables for GPS Receiver Data Frame
-      self.Latitude =  ""
+      self.Latitude =  0
       self.LatitudeLabel = ""
-      self.Longitude =  ""
+      self.Longitude =  0
       self.LongitudeLabel = ""
-      self.Altitude =  ""  # currently unused in lnr_clok_1500
+      self.Altitude =  0  # currently unused in lnr_clok_1500
       self.Satellites = "" # currently unused in lnr_clok_1500
       self.GPSStatus = ""
       self.GPSReceiverMode = "" # Trimble Related
@@ -405,8 +405,8 @@ class SpecGPSDO():
       
     def decodeGPRMC(self,response):
        responseArray = response.split(",") 
-       self.Latitude =  responseArray[3] 
+       self.Latitude =  float(responseArray[3])
        self.LatitudeLabel = responseArray[4]
-       self.Longitude = responseArray[5]
+       self.Longitude = float(responseArray[5])
        self.LongitudeLabel = responseArray[6]
        
