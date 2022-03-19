@@ -282,7 +282,7 @@ class Trigger():
           #check trigger valadity
           if ((main_script.GPSDO.epochGpsDateTime - self.unix_gps_trigger_deadline ) == 0):
               self.trigg_valadity = True
-              main_script.MainUi.trigger_text_box.insert(END, '\nTrigger Valid')
+              main_script.MainUi.trigger_text_box.insert(END, 'Trigger Valid\n')
           else:
             main_script.MainUi.trigger_text_box.insert(END, 'Trigger Error of ' + str(int(main_script.GPSDO.epochGpsDateTime - self.unix_gps_trigger_deadline )) + ' s \n')     
             self.trigg_valadity = False

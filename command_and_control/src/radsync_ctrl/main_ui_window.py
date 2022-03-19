@@ -198,7 +198,7 @@ class RadSyncUi():
           trigger_delay = 10
         'if trigger duration is nan, set duration as 1s'
         if (trigger_duration == ""): 
-          self.trigger_text_box.insert(END, "Trigger duraion od 1s default \n")
+          self.trigger_text_box.insert(END, "Default Trigger duraion of 1s selected \n")
           self.trigger_text_box.yview(END)
           trigger_duration = 1
         else:

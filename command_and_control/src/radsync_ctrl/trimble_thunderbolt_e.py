@@ -86,8 +86,8 @@ def _dateTimeToEpoch(dateTime):
 
 class ThunderboltGPSDO():
     '''
-    class for controling Spectratime GR-Clok 1500 Rubidium GPS Disaplined Oscillator
-    Connecting to GPSDO using serial connection on Raspberry Pi GPIO 
+    class for controling Trmble Thunderbolt E GPS Disaplined Oscillator
+    Connecting to GPSDO using USB connection on Raspberry Pi  
     '''
     
     def __init__(self, presence_flag):

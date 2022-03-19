@@ -128,7 +128,7 @@ class SpecGPSDO():
                  timeout = 1)
              #print "GPSDO Setup Started"
               
-             c = 2
+             c = 1
              while c > 0: #loop through 3 attempts to connect to GPSDO
                  c -= 1
                  self.setGpsCom(False)
@@ -138,19 +138,6 @@ class SpecGPSDO():
                    print("LNRCLOK-1500 GPSDO not detected")
                  else:
                    time.sleep(0.1)
-              
-             try:
-                gpsdoID = self.getID()
-                #main_script.MainUi.gpsdo_textbox.insert(END,"GPSDO Communications Initiated\n")
-                #main_script.MainUi.gpsdo_textbox.yview(END)
-                #print "GPSDO Communications Initiated"
-                print("GPSDO ID :", gpsdoID)
-                self.gpsdoDetected = True
-             except Exception as e:
-                print(str(e))
-                #main_script.MainUi.gpsdo_textbox.insert(END,"GPSDO Communication Failed\n")
-                print("GPSDO Communication Failed")
-                self.gpsdoDetected = False
     
     
     def _passCommand(self, command):     #pass command to GPSDO and display response in GPSDO response textbox
@@ -186,10 +173,10 @@ class SpecGPSDO():
             self.collectResponse('@@@@GPS')
             #while(True):
             print(self.GPSDO_SER.readline() + "\n")
-            print("GPS Mode Enabled")
+            print("GPS Receiver Pass-through Mode Enabled")
         elif (flag == False):
             self.collectResponse('@@@@')
-            print("GPS Mode Disabled")
+            print("GPS Receiver Pass-through Mode Disabled")
             
     def setTrack(self, flag):
         if flag == True:
