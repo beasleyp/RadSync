@@ -128,14 +128,14 @@ class SpecGPSDO():
                  timeout = 1)
              #print "GPSDO Setup Started"
               
-             c = 3
+             c = 2
              while c > 0: #loop through 3 attempts to connect to GPSDO
                  c -= 1
                  self.setGpsCom(False)
                  self.stopBeating()  #Ensure GPSDO isn't beating any messages
                  if (self.getSerialNo() == ''):
                    self.gpsdoDetected = False
-                   print("GPSDO not detected")
+                   print("LNRCLOK-1500 GPSDO not detected")
                  else:
                    time.sleep(0.1)
               
@@ -184,12 +184,12 @@ class SpecGPSDO():
     def setGpsCom(self, flag):
         if flag == True:
             self.collectResponse('@@@@GPS')
-            while(True):
-              print(self.GPSDO_SER.readline() + "\n")
-            #print "GPS Mode Enabled"
+            #while(True):
+            print(self.GPSDO_SER.readline() + "\n")
+            print("GPS Mode Enabled")
         elif (flag == False):
             self.collectResponse('@@@@')
-            #print "GPS Mode Disabled"
+            print("GPS Mode Disabled")
             
     def setTrack(self, flag):
         if flag == True:

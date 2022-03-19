@@ -131,17 +131,17 @@ def exit_routine(): # runs this routine upon exit
     global Server, System_tracker, Client
     MainUi.gpsdo_textbox.insert(END,"****Exiting Program****\n")
     MainUi.mGui.destroy() # close the window
-    Server.stopServer()
+    #Server.stopServer()
     GPSDO.pollGpsdoMetrics(False)
     GPSDO.GPSDO_SER.close()
+    time.sleep(1)
     setup_file_to_save_gpsdo_metics(False)
-    '''
     if System_tracker.this_node == 0:
         Server.stop_server()
     else:
         Client.stop_client()
     os._exit(1)
-    '''
+    
 
 def _set_system_time():
   global system_time_set_flag, gpsdo_connected, GPSDO
@@ -271,6 +271,7 @@ def _connect_to_gpsdo():
     '''
     attempt to connect to a GPSDO - LNRCLOK-1500 first, then Trimble.
     '''
+    '''
     GPSDO = lnr_clok_1500.SpecGPSDO(True) # Create GPSDO instance
     gpsdo_connected = GPSDOType.LNRCLOK1500
     print("Connected to Spectratime LNRCLOK-1500 GPSDO")
@@ -283,12 +284,12 @@ def _connect_to_gpsdo():
         return GPSDO
     except Exception as e:
         print(str(e))
-        if GPSDO.gpsdoDetected == False:
+        try:
+            if GPSDO.gpsdoDetected == True:
+                gpsdo_connected = GPSDOType.LNRCLOK1500
+        except Exception as e:
             gpsdo_connected = GPSDOType.NOTCONNECTED
-        else :
-            gpsdo_connected = GPSDOType.LNRCLOK1500
-            print("Connected to Spectratime LNRCLOK-1500 GPSDO")
-            return GPSDO
+
     
     if gpsdo_connected == GPSDOType.NOTCONNECTED:
         try:
@@ -299,7 +300,7 @@ def _connect_to_gpsdo():
         except Exception as e:
             print(str(e))
             print("Unable to connect to a GPSDO")
-    '''
+    
 
 
 # *********************** Program Begin ********************************
