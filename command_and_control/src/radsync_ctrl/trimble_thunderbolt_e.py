@@ -256,11 +256,13 @@ class ThunderboltGPSDO():
         return False
      
     def getPPSPulseWidth(self):
-         pulse_Length = self.collectResponse('PW?????????') 
-         #print( "Pulse Length in ns:" , pulse_Length)
-         self.PPSPulseWidth = 66*round(float(pulse_Length)/66) # find the actual pulse length, must be multiple of 66ns
-         #print( "Pulse length in ns:", pulse_Length)
-         return self.PPSPulseWidth  
+        '''
+        Trimble Thunderbolt E has fixed pulse width of 10 micro-seconds with 
+        its leading edge sychronised to the UTC second.
+        This function returns the pulse width in seconds.
+        '''
+        PPSPulseWidth = 0.000010
+        return self.PPSPulseWidth  
                                    
     def stopBeating(self):
         '''
@@ -352,6 +354,7 @@ class ThunderboltGPSDO():
     def _decodePrimaryTimingPacket(self,report):
         try:
               # decode date and time 
+              print(report)
               self.GpsDateTime = str(report[11])+str(report[10])+str(report[9])+str(report[8])+str(report[7])+str(report[6])
               #print(self.GpsDateTime)
               

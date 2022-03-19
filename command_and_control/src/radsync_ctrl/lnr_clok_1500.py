@@ -168,15 +168,6 @@ class SpecGPSDO():
     def getSerialNo(self): 
       return self.collectResponse("SN") 
       
-    def setGpsCom(self, flag):
-        if flag == True:
-            self.collectResponse('@@@@GPS')
-            #while(True):
-            print(self.GPSDO_SER.readline() + "\n")
-            print("GPS Receiver Pass-through Mode Enabled")
-        elif (flag == False):
-            self.collectResponse('@@@@')
-            print("GPS Receiver Pass-through Mode Disabled")
             
     def setTrack(self, flag):
         if flag == True:
@@ -219,10 +210,18 @@ class SpecGPSDO():
         return False
      
     def getPPSPulseWidth(self):
+         '''
+         This function returns the pulse width in seconds.
+         The pulse width is user selectable in 66ns STEPS fron 0 to 1 second
+         The device returns the PW in nano seconds
+         '''
          pulse_Length = self.collectResponse('PW?????????') 
          #print( "Pulse Length in ns:" , pulse_Length)
-         self.PPSPulseWidth = 66*round(float(pulse_Length)/66) # find the actual pulse length, must be multiple of 66ns
+         # find the actual pulse length, must be multiple of 66ns
+         self.PPSPulseWidth = 66*round(float(pulse_Length)/66) 
          #print( "Pulse length in ns:", pulse_Length)
+         # convert from nano-seconds to seconds.
+         self.PPSPulseWidth = self.PPSPulseWidth * 0.000000001
          return self.PPSPulseWidth  
                                    
     def stopBeating(self):
@@ -397,3 +396,56 @@ class SpecGPSDO():
        self.Longitude = float(responseArray[5])
        self.LongitudeLabel = responseArray[6]
        
+       ########################################################################
+       ########################################################################
+       ########################################################################
+       
+       '''
+       LEA6-T GPS Receiver related definitions and classes
+       '''
+       
+    def setGpsCom(self, flag):
+        if flag == True:
+            self.collectResponse('@@@@GPS')
+            #while(True):
+            print(self.GPSDO_SER.readline() + "\n")
+            print("GPS Receiver Pass-through Mode Enabled")
+        elif (flag == False):
+            self.collectResponse('@@@@')
+            print("GPS Receiver Pass-through Mode Disabled")
+       
+    def pollGpsdoMetrics(self,flag):
+      if flag:
+          self.hasPolled = True
+          self.collectResponse("BTA")
+          self.collectResponse("MAW0BB0")
+          self.collectResponse("MAW0C10")
+          self.PPSMetrics = threading.Thread(target=self.PPSMetricsPoller)
+          self.PPSMetrics.start()
+      if not flag:
+       if self.hasPolled:
+         self.PPSMetrics.do_run = False
+         time.sleep(0.1)
+       self.stopBeating()
+       self.firstQuery = True    
+        
+        
+       
+       
+    def GpsReceiverPoller(self):
+      self.PPSMetrics = threading.currentThread()
+      while (getattr(self.PPSMetrics, "do_run", True)):
+        try:
+          response = self._readLine() 
+          #print(response)
+          if (response[0:6] == "$PTNTA"):
+            self.decodePTNTA(response)
+          elif (response[0:6] == "$PTNTS"):
+            self.decodePTNTS(response)
+          elif (response[0:6] == "$GPRMC"):
+            self.decodeGPRMC(response)
+        except Exception as e:
+          pass
+          #print str(e)
+        time.sleep(0.2)
+      #print "Stopping PPSMetricsPoller"

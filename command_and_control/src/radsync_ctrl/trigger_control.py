@@ -216,7 +216,7 @@ class Trigger():
         self.rfsocTrigg = True
     
     def calculatePulseDelay(self):
-      self.Pulse_Pre_Delay = 1 + 0.5*main_script.GPSDO.PPSPulseWidth*0.000000001 - 0.5*self.Window_Length
+      self.Pulse_Pre_Delay = 1 + 0.5*main_script.GPSDO.PPSPulseWidth - 0.5*self.Window_Length
       #print("Pulse Pre_delay", str(self.Pulse_Pre_Delay))
 
       
