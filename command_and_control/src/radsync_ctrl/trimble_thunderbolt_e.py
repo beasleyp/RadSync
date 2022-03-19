@@ -504,4 +504,4 @@ class ThunderboltGPSDO():
 
 def bitfield(n):
     print(n)
-    return [1 if digit=='1' else 0 for digit in bin(n)] # [1:] to chop off the "0b" part 
+    return [1 if digit=='1' else 0 for digit in bin(n)[2:].zfill(13)] # [1:] to chop off the "0b" part 
