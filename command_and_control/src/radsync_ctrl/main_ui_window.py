@@ -328,8 +328,9 @@ class RadSyncUi():
 
                  
     def animate(self,i):
-        if self.is_polling_gpsdo:
-            
+        if not self.is_polling_gpsdo:
+            return
+        if main_script.Trigger.unix_gps_trigger_deadline == -1:
            self.effective_time_interval_deque.append(main_script.GPSDO.EffTimeInt)
            self.fine_phase_comparator_deque.append(main_script.GPSDO.FinePhaseComp)
            self.ppsref_sigma_deque.append(main_script.GPSDO.PPSRefSigma)
@@ -343,6 +344,9 @@ class RadSyncUi():
            self.fpco.set_title ("Fine Phase Comparator - PPSREF vs PPSINT", fontsize=10)
            self.fpco.set_ylabel("Temporal Error (ns)", fontsize=10)
            self.fpco.set_xlabel("Time (s)", fontsize=10)
+           
+           if main_script.gpsdo_connected == main_script.GPSDOType.THUNDERBOLTE:
+               return
            
            self.etio.clear()
            self.etio.plot(time_axis,Effective_Time_Int_np)
@@ -597,7 +601,7 @@ class RadSyncUi():
         graph_frame.grid(row=2,column=0,columnspan=3,pady=10,padx=10)
         fpc_canvas = FigureCanvasTkAgg(fpc_figure,graph_frame)
         fpc_canvas.get_tk_widget().grid(row=0,column=0,sticky=W,pady=10,padx=10)
-        #ani = animation.FuncAnimation(fpc_figure, self.animate, interval=1000)
+        ani = animation.FuncAnimation(fpc_figure, self.animate, interval=1000)
         fpc_canvas.draw()
         # End of figures
         

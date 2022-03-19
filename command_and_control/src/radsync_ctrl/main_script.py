@@ -30,6 +30,7 @@ from time import * # double check this
 import os
 import time
 import sys
+import multiprocessing
 
 from tkinter import *
 
@@ -317,6 +318,9 @@ def main():
     
     if args.node == 0:
         #Initialise Trigger
+        #Trigger = multiprocessing.Process(target=trigger_control.Trigger, args=(0,))
+        #Trigger.start()
+        #Trigger.join()
         Trigger = trigger_control.Trigger(args.node) # Create trigger instance
         MainUi = main_ui_window.RadSyncUi(args.node)
         time.sleep(5)
