@@ -77,11 +77,12 @@ def _decodeDiscapliningActivity(x):
 
 
 def _dateTimeToEpoch(dateTime):
-        p = '%Y%m%d%H%M%S'
+        #print(str(dateTime))
+        p = '%Y/%m/%d/%H/%M/%S'
         epoch = datetime.datetime(1970, 1, 1)
         #print "epoch :", epoch
         epochTime = (datetime.datetime.strptime(dateTime,p) - epoch).total_seconds()
-        #print "epoch_Time :", epochTime
+        #print( "epoch_Time :", epochTime)
         return epochTime
 
 class ThunderboltGPSDO():
@@ -354,8 +355,8 @@ class ThunderboltGPSDO():
     def _decodePrimaryTimingPacket(self,report):
         try:
               # decode date and time 
-              print(report)
-              self.GpsDateTime = str(report[11])+str(report[10])+str(report[9])+str(report[8])+str(report[7])+str(report[6])
+              #print(report)
+              self.GpsDateTime = str(report[11])+"/"+str(report[10])+"/"+str(report[9])+"/"+str(report[8])+"/"+str(report[7])+"/"+str(report[6])
               #print(self.GpsDateTime)
               
               # convert date and time to unix time

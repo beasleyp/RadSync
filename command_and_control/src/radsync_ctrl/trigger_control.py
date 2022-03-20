@@ -87,8 +87,8 @@ class Trigger():
     
     def ppsDetected(self, channel):
       #print "PPS Detected" 
-      time.sleep(0.3)
       if self.Trigger_Pending == True:
+        time.sleep(0.3)
         self.calculateTriggerTime()
         self.Trigger_Pending = False
       self.realTimeCounter() # always query RTC
@@ -221,17 +221,28 @@ class Trigger():
 
       
     def realTimeCounter(self):
-      print("Trigger Deadline: ", self.unix_gps_trigger_deadline)
-      print("Current time", main_script.GPSDO.epochGpsDateTime)
+      #print("Trigger Deadline: ", self.unix_gps_trigger_deadline)
+      #print("Current time", main_script.GPSDO.epochGpsDateTime)
+      
       if self.unix_gps_trigger_deadline != -1: #only clock RTC if there is a trigger time set.
          delta = self.unix_gps_trigger_deadline - main_script.GPSDO.epochGpsDateTime
          main_script.MainUi.trigger_countdown_text.set("Time until Trigger: " + str(delta))
+         
          if (delta == 1) or (delta < -1):
             GPIO.remove_event_detect(Trigger.PPS_OUT)
             self.sendTrigger() 
             self.unix_gps_trigger_deadline = -1 # reset the epoch trigger deadline
             GPIO.add_event_detect(Trigger.PPS_OUT, GPIO.RISING, callback= self.ppsDetected)
-      if self.Epoch_Trigger_Deadline != -1: #only clock RTC if there is a trigger time set.
+         '''
+            if delta == 0 :
+            print("Trigger Detected")
+            self._onDetectingTriggerEdge()
+            GPIO.add_event_detect(Trigger.PPS_OUT, GPIO.RISING, callback= self.ppsDetected)
+            self.unix_gps_trigger_deadline = -1 # reset the epoch trigger deadline   
+         ''' 
+
+    '''    
+    if self.Epoch_Trigger_Deadline != -1: #only clock RTC if there is a trigger time set.
         self.Epoch_Time += 1 # increment epoch time each time the RTC is clocked.
         delta = self.Epoch_Trigger_Deadline - self.Epoch_Time
         main_script.MainUi.trigger_countdown_text.set("Time until Trigger: " + str(delta))
@@ -239,14 +250,16 @@ class Trigger():
         if delta == 1:
           self.sendTrigger()
           self.Epoch_Trigger_Deadline = -1 # reset the epoch trigger deadline
+    '''       
       
-        
-        
-        
-        
+   
     def sendTrigger(self):
       High = GPIO.HIGH
       Low = GPIO.LOW  
+      '''
+      Diffrent triggers for bladeRF and other radars as bladeRF trigger isn't 
+      strickly a trigger - slighty more complicated.
+      '''
       time.sleep(self.Pulse_Pre_Delay-0.3) # allow the current pulse to pass
       try:
           if self.rfsocTrigg == True:
@@ -307,7 +320,7 @@ class Trigger():
       except Exception as e:
           print(str(e))
           os._exit(1)
-          
+      
           
           
           
