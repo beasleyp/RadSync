@@ -260,7 +260,7 @@ class Trigger():
       Diffrent triggers for bladeRF and other radars as bladeRF trigger isn't 
       strickly a trigger - slighty more complicated.
       '''
-      time.sleep(self.Pulse_Pre_Delay-0.3) # allow the current pulse to pass
+      time.sleep(self.Pulse_Pre_Delay) # allow the current pulse to pass
       try:
           if self.rfsocTrigg == True:
             GPIO.output(Trigger.Trigger_Pass, High)
