@@ -128,12 +128,14 @@ def exit_routine(): # runs this routine upon exit
     MainUi.mGui.destroy() # close the window
     #TCPServer.stopServer()
     GPSDO.pollGpsdoMetrics(False)
-    GPSDO.GPSDO_SER.close()
-    setup_file_to_save_gpsdo_metics(False)
-    if System_tracker.this_node == 0:
-        Server.stop_server()
-    else:
-        Client.stop_client()
+    #GPSDO.GPSDO_SER.close()
+# =============================================================================
+#     setup_file_to_save_gpsdo_metics(False)
+#     if System_tracker.this_node == 0:
+#         Server.stop_server()
+#     else:
+#         Client.stop_client()
+# =============================================================================
     os._exit(1)
 
 
@@ -260,8 +262,8 @@ def main():
         time.sleep(5)
         
         # Start server to serve connections to RadSyn Slaves and Arestor clients 
-        Server = network_utils.MasterRadSyncServer()
-        Server.start_server()
+        #Server = network_utils.MasterRadSyncServer()
+        #Server.start_server()
     
     if args.node == 1:
         #Initialise Trigger

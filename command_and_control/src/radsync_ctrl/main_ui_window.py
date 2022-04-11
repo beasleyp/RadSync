@@ -19,7 +19,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from . import main_script
-from . import grclok_1500_popout
+#from . import lnr_clok_1500_popout
 
 from tkinter import *
 import matplotlib
@@ -388,8 +388,8 @@ class RadSyncUi():
         metrics_bar_frame = Frame(right_frame,highlightbackground="black", highlightthickness=2)
         metrics_bar_frame.grid(row=1,column=0,pady=10,padx=10,sticky=N)
         
-        GPSDO_Terminal = Button(metrics_bar_frame,text="GPSDO Parameters",command=grclok_1500_popout.LaunchTerminal())
-        GPSDO_Terminal.grid(row=0,column=0,columnspan=2, pady=5, padx=10)
+       # GPSDO_Terminal = Button(metrics_bar_frame,text="GPSDO Parameters",command=lnr_clok_1500_popout.LaunchTerminal())
+        #GPSDO_Terminal.grid(row=0,column=0,columnspan=2, pady=5, padx=10)
         mlabel = Label(metrics_bar_frame,text="Poll GPSDO",width=labelw,justify=LEFT,anchor="w").grid(row=1,column=0, padx=xpad,pady=ypad)
         mCheck_Poll = Checkbutton(metrics_bar_frame,state=ACTIVE,variable=self.gpsdo_polling_checkbox_state,onvalue=1,offvalue=0,command=self.poll_gpsdo)
         mCheck_Poll.grid(row=1,column=1, padx=xpad,pady=ypad)
@@ -591,6 +591,6 @@ class RadSyncUi():
         graph_frame.grid(row=2,column=0,columnspan=3,pady=10,padx=10)
         fpc_canvas = FigureCanvasTkAgg(fpc_figure,graph_frame)
         fpc_canvas.get_tk_widget().grid(row=0,column=0,sticky=W,pady=10,padx=10)
-        #ani = animation.FuncAnimation(fpc_figure, self.animate, interval=1000)
+        ani = animation.FuncAnimation(fpc_figure, self.animate, interval=1000)
         fpc_canvas.draw()
         # End of figures        
