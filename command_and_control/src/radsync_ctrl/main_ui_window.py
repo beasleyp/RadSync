@@ -239,25 +239,31 @@ class RadSyncUi():
        '''
        Funtction to update the GPSDO metrics - upates at 1 Hz
        '''
-       #Variables for Oscillator Data Frame
-       self.gpsdo_status.set(main_script.GPSDO.Status)
-       self.disciplining_status.set(main_script.GPSDO.DiscipliningStatus)
-       self.current_gpsdo_freq.set(main_script.GPSDO.CurrentFreq)
-       self.gpsdo_holdover_freq.set(main_script.GPSDO.HoldoverFreq)
-       self.gpsdo_time_constant_mode.set(main_script.GPSDO.ConstantMode)
-       self.gpsdo_time_constant_value.set(main_script.GPSDO.ConstantValue)
-       self.gpsdo_holdover_duration.set(main_script.GPSDO.HoldoverDuration)
-       #Variables for GPS Receiver Data Frame
-       self.gpsdo_latitude.set(str((round(main_script.GPSDO.Latitude,8))) + " " + main_script.GPSDO.LatitudeLabel)
-       self.gpsdo_longitude.set(str((round(main_script.GPSDO.Longitude,8))) + " " + main_script.GPSDO.LongitudeLabel)
-       self.gpsdo_altitude.set(str(round(main_script.GPSDO.Altitude,8)))
-       #self.gpsdo_satellites.set(GPSDO.SatellitesPPS Error Items)
-       self.gpsdo_tracking_info.set(str(main_script.GPSDO.GPSReceiverMode))
-       self.gpsdo_gps_status.set(main_script.GPSDO.GPSStatus)
-       self.self_survey_progress.set(str(main_script.GPSDO.SelfSurveyProgress) + " %")
-       self.mGui.after(1000, self.update_gpsdo_metrics) 
-       if self.save_gpsdo_metrics_flag:
-           main_script.save_gpsdo_metrics_to_file()
+       try:
+           #Variables for Oscillator Data Frame
+           self.gpsdo_status.set(main_script.GPSDO.Status)
+           self.disciplining_status.set(main_script.GPSDO.DiscipliningStatus)
+           self.current_gpsdo_freq.set(main_script.GPSDO.CurrentFreq)
+           self.gpsdo_holdover_freq.set(main_script.GPSDO.HoldoverFreq)
+           self.gpsdo_time_constant_mode.set(main_script.GPSDO.ConstantMode)
+           self.gpsdo_time_constant_value.set(main_script.GPSDO.ConstantValue)
+           self.gpsdo_holdover_duration.set(main_script.GPSDO.HoldoverDuration)
+           #Variables for GPS Receiver Data Frame
+           self.gpsdo_latitude.set(str((round(main_script.GPSDO.Latitude,8))) + " " + main_script.GPSDO.LatitudeLabel)
+           self.gpsdo_longitude.set(str((round(main_script.GPSDO.Longitude,8))) + " " + main_script.GPSDO.LongitudeLabel)
+           self.gpsdo_altitude.set(str(round(main_script.GPSDO.Altitude,8)))
+           #self.gpsdo_satellites.set(GPSDO.SatellitesPPS Error Items)
+           self.gpsdo_tracking_info.set(str(main_script.GPSDO.GPSReceiverMode))
+           self.gpsdo_gps_status.set(main_script.GPSDO.GPSStatus)
+           self.self_survey_progress.set(str(main_script.GPSDO.SelfSurveyProgress) + " %")
+           self.mGui.after(1000, self.update_gpsdo_metrics) 
+           if self.save_gpsdo_metrics_flag:
+               main_script.save_gpsdo_metrics_to_file()
+       except Exception as  e:
+           print("Exception whilst updating GPSDO metrics in main UI window\n")
+           print(str(e))       
+        
+        
     
     def update_trimble_alarms(self):
        # Minor Alarm Data Frame - Trimble only

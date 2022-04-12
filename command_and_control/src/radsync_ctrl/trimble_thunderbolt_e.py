@@ -206,6 +206,8 @@ class ThunderboltGPSDO():
         '''   
             
     def setTrack(self, flag):
+        pass
+        '''
         if flag == True:
             response = self.collectResponse('TR1')
             if (response[:-2] == "1"):
@@ -214,8 +216,11 @@ class ThunderboltGPSDO():
             response = self.collectResponse('TR0')
             if response[:-2] == "0":
                 print("Tracking to PPSREF unset \n")
+        '''
 
     def setSync(self, flag):
+        pass
+        '''
         if (flag == True):
             response = self.collectResponse('SY1')
             if response[:-2] == "1":
@@ -224,7 +229,8 @@ class ThunderboltGPSDO():
             response = self.collectResponse('SY0')
             if (response[:-2] == "0"):
                 print("PPSOUT synchronisation to PPSINT unset \n")
-    
+        
+        '''
     def isTrackingSet(self):
         '''
         response = self.collectResponse('TR?')
@@ -281,35 +287,7 @@ class ThunderboltGPSDO():
        return str(self.collectResponse('DT'))[0:10]
        
     def getRbMetrics(self):
-      count = 5
-      try:
-        M = self.collectResponse('M')
-      except Exception as e:
-        print(str(e))
-        M = " "
-      if (len(M) != 26):
-        try:
-          while (count > 0) & (len(M) != 26):
-            print("Not Responding Trying again in 2 seconds")
-            time.sleep(2)
-            M = self.collectResponse('M')
-            count -= 1
-        except Exception as e:
-          print(str(e))
-      self.FreqAdjRaw = int(M[0:2],16)
-      self.Reserve1 = int(M[3:5],16)
-      self.PeakVoltRBRaw = int(M[6:8],16)
-      self.DC_PhotoRaw = int(M[9:11],16)
-      self.VaracCtrlRaw = int(M[12:14],16)
-      self.RBLampCurrentRaw = int(M[15:17],16)
-      self.RBHeatingCurrentRaw = int(M[18:20],16)
-      self.Reserve2 = int(M[21:23],16)
-      self.FreqAdjNorm = str(round(float(self.FreqAdjRaw)/51,3)) + "V"
-      self.PeakVoltRBNorm = str(round(float(self.PeakVoltRBRaw)/51,3)) + "V"
-      self.DC_PhotoNorm = str(round(float(self.DC_PhotoRaw)/51,3)) + "V"
-      self.VaracCtrlNorm = str(round(float(self.VaracCtrlRaw)/51,3)) + "V"
-      self.RBLampCurrentNorm = str(round(float(self.RBLampCurrentRaw*100)/51,3))+"mA"
-      self.RBHeatingCurrentNorm = str(round(float(self.RBHeatingCurrentRaw*100)/51,3))+"mA"       
+        pass
        
     def getTrackingSettings(self):
       self.AlarmVal = (self.collectResponse('AW???'))[0:3]
@@ -365,6 +343,7 @@ class ThunderboltGPSDO():
                     self._decodeSupplementalTimingPacket(report)
        
         except Exception as e:
+          print("Exception in Trimble Metrics Poller\n")
           print(str(e))
         time.sleep(0.2)
       print("Stopping PPSMetricsPoller")
@@ -464,7 +443,6 @@ class ThunderboltGPSDO():
     
         def updateMinorAlarms(self, minor_alarms):
              try: 
-                  print(str(minor_alarms))
                   if minor_alarms[12] == 0:
                          self.DACALARM = False
                   else : self.DACALARM = True
@@ -503,5 +481,4 @@ class ThunderboltGPSDO():
                  print(str(e), "\n")
 
 def bitfield(n):
-    print(n)
     return [1 if digit=='1' else 0 for digit in bin(n)[2:].zfill(13)] # [1:] to chop off the "0b" part 
