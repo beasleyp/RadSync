@@ -120,6 +120,7 @@ class Trigger():
       if (main_script.MainUi.is_polling_gpsdo == True):
          self.unix_gps_trigger_deadline = main_script.GPSDO.epochGpsDateTime + self.Delay_Trigger_Sec
          #print( "GPS Trigger Deadline : ", self.unix_gps_trigger_deadline )
+         main_script.send_arestor_trigger_ack(False)
          self.broadcastTrigger()
          
       if (main_script.MainUi.is_polling_gpsdo == False):
@@ -138,7 +139,7 @@ class Trigger():
          self.Epoch_Time = (datetime.datetime.strptime(date_Time,p) - epoch).total_seconds()
          #print("epoch_Time =", self.Epoch_Time)
          self.Epoch_Trigger_Deadline = self.Epoch_Time + self.Delay_Trigger_Sec #set trigger epoch time 
-         #print("Epoch Trigger Deadline", self.Epoch_Trigger_Deadline)
+        # print("Epoch Trigger Deadline", self.Epoch_Trigger_Deadline)
          #self.realTimeCounter()
          self.broadcastTrigger()
       

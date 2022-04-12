@@ -36,7 +36,7 @@ setup(
         author_email     = "piers.beasley.19@ucl.ac.uk",
         description      = "Control the RadSync System",
         package_dir      = {'':'src'},
-        packages         = ['radsync_ctrl'],
+        packages         = ['radsync_ctrl','ptsip'],
         install_requires = install_dependencies,
         entry_points     = {'console_scripts': ['radsync = radsync_ctrl.main_script:main']}  
 )

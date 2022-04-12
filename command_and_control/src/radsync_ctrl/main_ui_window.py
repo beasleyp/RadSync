@@ -46,19 +46,21 @@ class RadSyncUi():
         
         # Variables for Oscillator Data Frame
         self.gpsdo_status = StringVar()
-        self.rubidium_status = StringVar()
+        self.disciplining_status = StringVar()
         self.current_gpsdo_freq = StringVar()
         self.gpsdo_holdover_freq = StringVar()
         self.gpsdo_time_constant_mode = StringVar()
         self.gpsdo_time_constant_value = StringVar()
-       
+        self.gpsdo_holdover_duration = StringVar()
+        
         # Variables for GPS Receiver Data Frame
         self.gpsdo_latitude = StringVar()
         self.gpsdo_longitude = StringVar()
         self.gpsdo_altitude = StringVar()
         self.gpsdo_satellites = StringVar()
         self.gpsdo_tracking_info = StringVar()
-        self.gpsdo_gps_validity = StringVar()
+        self.gpsdo_gps_status = StringVar()
+        self.self_survey_progress = StringVar()
                 
         # Variables for checkboxes
         self.gpsdo_track_checkbox_state = IntVar()
@@ -77,7 +79,7 @@ class RadSyncUi():
         self.trigger_countdown_text = StringVar()
     
         # Variables for PPSOUT Error Variables
-        self.pps_graphs_xaxis_length = 10 #60 * 2 # length of PPS Error Arrays graph time axis (default 2 mins)
+        self.pps_graphs_xaxis_length = 60 #* 2 # length of PPS Error Arrays graph time axis (default 2 mins)
         self.fine_phase_comparator_deque = deque(maxlen = self.pps_graphs_xaxis_length)
         self.effective_time_interval_deque = deque(maxlen = self.pps_graphs_xaxis_length)
         self.ppsref_sigma_deque = deque(maxlen = self.pps_graphs_xaxis_length)
@@ -98,6 +100,8 @@ class RadSyncUi():
             self.mGui.title("RadSync Node 1 - Slave Node Control Interface")
             self._setup_slave_ui_layout()
         self.update_gpsdo_metrics()
+        if main_script.gpsdo_connected == main_script.GPSDOType.THUNDERBOLTE:
+            self.update_trimble_alarms()
     
     '''
     GPSDO related control functions 
@@ -186,12 +190,19 @@ class RadSyncUi():
             time.sleep(1)
         self.trigger_time_entry_box.configure(state=DISABLED) # Disable the entry box
         trigger_delay = int(self.user_trigger_delay_input.get()) # get trigger delay from entry box
-        trigger_duration = int(self.user_trigger_duration_input.get()) # get trigger duration from entry box
-        
+        trigger_duration = self.user_trigger_duration_input.get() # get trigger duration from entry box
+        'if trigger delay is <`10s, set delay as 10s'
         if (trigger_delay < 10) or (trigger_delay == ""): #don't accept a trigger deadline less than 10s away.
           self.trigger_text_box.insert(END, "Minimum trigger delay is 10s;\nTrigger delay set to 10s; \n")
           self.trigger_text_box.yview(END)
           trigger_delay = 10
+        'if trigger duration is nan, set duration as 1s'
+        if (trigger_duration == ""): 
+          self.trigger_text_box.insert(END, "Trigger duraion od 1s default \n")
+          self.trigger_text_box.yview(END)
+          trigger_duration = 1
+        else:
+            trigger_duration = int(trigger_duration)
         # request a trigger from trigger routine with trigger_delay in s  
         main_script.Trigger.setTriggerPending(trigger_delay,trigger_duration)
         
@@ -230,21 +241,73 @@ class RadSyncUi():
        '''
        #Variables for Oscillator Data Frame
        self.gpsdo_status.set(main_script.GPSDO.Status)
-       self.rubidium_status.set(main_script.GPSDO.RbStatus)
+       self.disciplining_status.set(main_script.GPSDO.DiscipliningStatus)
        self.current_gpsdo_freq.set(main_script.GPSDO.CurrentFreq)
        self.gpsdo_holdover_freq.set(main_script.GPSDO.HoldoverFreq)
        self.gpsdo_time_constant_mode.set(main_script.GPSDO.ConstantMode)
        self.gpsdo_time_constant_value.set(main_script.GPSDO.ConstantValue)
+       self.gpsdo_holdover_duration.set(main_script.GPSDO.HoldoverDuration)
        #Variables for GPS Receiver Data Frame
-       self.gpsdo_latitude.set(main_script.GPSDO.Latitude + " " + main_script.GPSDO.LatitudeLabel)
-       self.gpsdo_longitude.set(main_script.GPSDO.Longitude + " " + main_script.GPSDO.LongitudeLabel)
-       #self.gpsdo_altitude.set(GPSDO.Altitude)
+       self.gpsdo_latitude.set(str((round(main_script.GPSDO.Latitude,8))) + " " + main_script.GPSDO.LatitudeLabel)
+       self.gpsdo_longitude.set(str((round(main_script.GPSDO.Longitude,8))) + " " + main_script.GPSDO.LongitudeLabel)
+       self.gpsdo_altitude.set(str(round(main_script.GPSDO.Altitude,8)))
        #self.gpsdo_satellites.set(GPSDO.SatellitesPPS Error Items)
-       #self.gpsdo_tracking_info.set(GPSDO.Tracking)
-       self.gpsdo_gps_validity.set(main_script.GPSDO.Validity)
-       self.mGui.after(1000, self.update_gpsdo_metrics)
+       self.gpsdo_tracking_info.set(str(main_script.GPSDO.GPSReceiverMode))
+       self.gpsdo_gps_status.set(main_script.GPSDO.GPSStatus)
+       self.self_survey_progress.set(str(main_script.GPSDO.SelfSurveyProgress) + " %")
+       self.mGui.after(1000, self.update_gpsdo_metrics) 
        if self.save_gpsdo_metrics_flag:
            main_script.save_gpsdo_metrics_to_file()
+    
+    def update_trimble_alarms(self):
+       # Minor Alarm Data Frame - Trimble only
+       # Dac near rail 
+       if main_script.GPSDO.minorAlarms.DACALARM == True:
+             self.dacCanvas.itemconfig(self.DAC_ALARM_IND, fill="red")
+       else: self.dacCanvas.itemconfig(self.DAC_ALARM_IND, fill="green")
+       # Antenna Open
+       if main_script.GPSDO.minorAlarms.ANTENNAOPEN == True:
+             self.openCanvas.itemconfig(self.AntennaOpen_ALARM_IND, fill="red") 
+       else: self.openCanvas.itemconfig(self.AntennaOpen_ALARM_IND, fill="green") 
+       # Antenna Shorted
+       if main_script.GPSDO.minorAlarms.ANTENNASHORT == True:
+             self.shortCanvas.itemconfig(self.AntennaShort_ALARM_IND, fill ="red")
+       else: self.shortCanvas.itemconfig(self.AntennaShort_ALARM_IND, fill ="green")
+       # Not tracking Sats
+       if main_script.GPSDO.minorAlarms.NOSATS == True:
+             self.noSatCanvas.itemconfig(self.N0SATs_ALARM_IND, fill="red")
+       else: self.noSatCanvas.itemconfig(self.N0SATs_ALARM_IND, fill="green")
+       # Not discaplining
+       if main_script.GPSDO.minorAlarms.NODISCIPLINE == True:
+             self.notDiscipiningCanvas.itemconfig(self.N0TDISCIPLINING_ALARM_IND, fill="red")
+       else: self.notDiscipiningCanvas.itemconfig(self.N0TDISCIPLINING_ALARM_IND, fill="green")
+       # Survey in process
+       if main_script.GPSDO.minorAlarms.SURVEYIN == True:
+             self.surveyCanvas.itemconfig(self.SURVEYIN_ALARM_IND, fill="red") 
+       else: self.surveyCanvas.itemconfig(self.SURVEYIN_ALARM_IND, fill="red")
+       # No stored Positon
+       if main_script.GPSDO.minorAlarms.NOPOSITION == True:
+             self.noPosCanvas.itemconfig(self.NOPOSITION_ALARM_IND, fill="red") 
+       else: self.noPosCanvas.itemconfig(self.NOPOSITION_ALARM_IND, fill="red") 
+       # Leap second pending
+       if main_script.GPSDO.minorAlarms.LEAPSECOND == True:
+             self.leapSCanvas.itemconfig(self.LEAPS_ALARM_IND, fill="red") 
+       else: self.leapSCanvas.itemconfig(self.LEAPS_ALARM_IND, fill="green") 
+       # Position Questionable
+       if main_script.GPSDO.minorAlarms.POSQ == True:
+             self.posQCanvas.itemconfig(self.POSITIONQ_ALARM_IND, fill="red")
+       else: self.posQCanvas.itemconfig(self.POSITIONQ_ALARM_IND, fill="red")
+        # Almanac not complete
+       if main_script.GPSDO.minorAlarms.ALMANAC == True:
+             self.almanacCanvas.itemconfig(self.ALMANAC_ALARM_IND, fill="red")
+       else: self.almanacCanvas.itemconfig(self.ALMANAC_ALARM_IND, fill="green")
+       # PPS not generated
+       if main_script.GPSDO.minorAlarms.PPSNOTGEN == True:
+             self.ppsCanvas.itemconfig(self.PPSNOTGEN_ALARM_IND, fill="red")
+       else: self.ppsCanvas.itemconfig(self.PPSNOTGEN_ALARM_IND, fill="green")
+       self.mGui.after(3000, self.update_trimble_alarms) 
+    
+    
     
     def setup_checkboxes(self):
         #setup GPSDO control check boxes
@@ -386,7 +449,7 @@ class RadSyncUi():
         
         #Toolbar Frame
         metrics_bar_frame = Frame(right_frame,highlightbackground="black", highlightthickness=2)
-        metrics_bar_frame.grid(row=1,column=0,pady=10,padx=10,sticky=N)
+        metrics_bar_frame.grid(row=0,column=0,pady=10,padx=10,sticky=N)
         
        # GPSDO_Terminal = Button(metrics_bar_frame,text="GPSDO Parameters",command=lnr_clok_1500_popout.LaunchTerminal())
         #GPSDO_Terminal.grid(row=0,column=0,columnspan=2, pady=5, padx=10)
@@ -404,13 +467,13 @@ class RadSyncUi():
         
         #Oscillator Frame
         oscillator_frame = Frame(right_frame,width=300,height=300,highlightbackground="black", highlightthickness=2)
-        oscillator_frame.grid(row=1,column=1,pady=10,padx=10)
+        oscillator_frame.grid(row=0,column=1,pady=10,padx=10)
         #oscillator_frame.grid_propagate(0)
         mlabel = Label(oscillator_frame, text="Oscillator Information",font=("Arial",11)).grid(row=0,column=0,columnspan=2,padx=xpad,pady=ypad)
         mlabel = Label(oscillator_frame,text="GPSDO Status: ",width=labelw,justify=LEFT,anchor="w").grid(row=2,column=0,sticky=W,padx=xpad,pady=ypad)
         mStatus = Label(oscillator_frame,textvariable=self.gpsdo_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=2,column=1,sticky=W,padx=xpad,pady=ypad)
-        mlabel = Label(oscillator_frame,text="Rb Status: ",width=labelw,justify=LEFT,anchor="w").grid(row=3,column=0,sticky=W,padx=xpad,pady=ypad)
-        mRbStatus = Label(oscillator_frame,textvariable=self.rubidium_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=3,column=1, sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(oscillator_frame,text="Disciplining Status: ",width=labelw,justify=LEFT,anchor="w").grid(row=3,column=0,sticky=W,padx=xpad,pady=ypad)
+        mDisapliningStatus = Label(oscillator_frame,textvariable=self.disciplining_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=3,column=1, sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(oscillator_frame,text="Current Freq:  ",width=labelw,justify=LEFT,anchor="w").grid(row=4,column=0, sticky=W,padx=xpad,pady=ypad)
         mCurFreq = Label(oscillator_frame,textvariable=self.current_gpsdo_freq,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=4,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(oscillator_frame,text="Holdover Freq:  ",width=labelw,justify=LEFT,anchor="w").grid(row=5,column=0,sticky=W,padx=xpad,pady=ypad)
@@ -419,27 +482,114 @@ class RadSyncUi():
         mTimeConMode = Label(oscillator_frame,textvariable=self.gpsdo_time_constant_mode,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=6,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabelend = Label(oscillator_frame,text="Time Constant Value:  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
         mTimeConVal = Label(oscillator_frame,textvariable=self.gpsdo_time_constant_value,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=7,column=1,sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(oscillator_frame,text="Holdover Duration (s):  ",width=labelw,justify=LEFT,anchor="w").grid(row=8,column=0,sticky=W,padx=xpad,pady=ypad)
+        mHoldoverDur = Label(oscillator_frame,textvariable=self.gpsdo_holdover_duration,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=8,column=1,sticky=W,padx=xpad,pady=ypad)
         #End of Oscillator Frame
         
         
         #GPS Receiver Frame
         gpsReceiever_frame = Frame(right_frame,width=300,height=300,highlightbackground="black", highlightthickness=2)
-        gpsReceiever_frame.grid(row=1,column=2,pady=10,padx=10)
+        gpsReceiever_frame.grid(row=0,column=2,pady=10,padx=10)
         #oscillator_frame.grid_propagate(0)
         mlabel = Label(gpsReceiever_frame, text="GPS Recevier Data",font=("Arial",11)).grid(row=0,column=0,columnspan=2,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="Latitude: ",width=labelw,justify=LEFT,anchor="w").grid(row=2,column=0,sticky=W,padx=xpad,pady=ypad)
         mLatitude = Label(gpsReceiever_frame,textvariable=self.gpsdo_latitude,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=2,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="Longitude: ",width=labelw,justify=LEFT,anchor="w").grid(row=3,column=0,sticky=W,padx=xpad,pady=ypad)
         mLongitude = Label(gpsReceiever_frame,textvariable=self.gpsdo_longitude,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=3,column=1,sticky=W,padx=xpad,pady=ypad)
-        mlabel = Label(gpsReceiever_frame,text="Altitude:  ",width=labelw,justify=LEFT,anchor="w").grid(row=4,column=0, sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(gpsReceiever_frame,text="Altitude (WGS84):  ",width=labelw,justify=LEFT,anchor="w").grid(row=4,column=0, sticky=W,padx=xpad,pady=ypad)
         mAltitude = Label(gpsReceiever_frame,textvariable=self.gpsdo_altitude,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=4,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="Satellites:  ",width=labelw,justify=LEFT,anchor="w").grid(row=5,column=0,sticky=W,padx=xpad,pady=ypad)
         mSatellites = Label(gpsReceiever_frame,textvariable=self.gpsdo_satellites,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=5,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="Tracking:  ",width=labelw,justify=LEFT,anchor="w").grid(row=6,column=0, sticky=W,padx=xpad,pady=ypad)
         mTracking = Label(gpsReceiever_frame,textvariable=self.gpsdo_tracking_info,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=6,column=1,sticky=W,padx=xpad,pady=ypad)
-        mlabel = Label(gpsReceiever_frame,text="GPS Validitiy:  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
-        mValididty = Label(gpsReceiever_frame,textvariable=self.gpsdo_gps_validity,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=7,column=1,sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(gpsReceiever_frame,text="GPS Status:  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
+        mValididty = Label(gpsReceiever_frame,textvariable=self.gpsdo_gps_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=7,column=1,sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(gpsReceiever_frame,text="Self-Survey Prog:  ",width=labelw,justify=LEFT,anchor="w").grid(row=8,column=0,sticky=W,padx=xpad,pady=ypad)
+        mSelfSurvey = Label(gpsReceiever_frame,textvariable=self.self_survey_progress,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=8,column=1,sticky=W,padx=xpad,pady=ypad)
         #End of GPS Receiever Frame
+        
+        #Trimble Minor Alarm Frame
+        ind_canvas_height = 20
+        ind_canvas_width = 20
+        ind_pady =5
+        indpadx = 5
+        indy0 = 2
+        indx0 = 2
+        indx1 = 15
+        indy1 = 15
+        labelpadx = 5
+        labelpady = 5 
+        
+        minorAlarms_frame = Frame(right_frame,width=600,height=300,highlightbackground="black", highlightthickness=2)
+        minorAlarms_frame.grid(row=0,column=3,rowspan=3,columnspan=3, pady=10,padx=10, sticky = N)
+        mlabel = Label(minorAlarms_frame, text="GPS Receiver Alarms",font=("Arial",11)).grid(row=0,column=0,columnspan=2,padx=xpad,pady=ypad)
+        # DAC near rail
+        self.dacCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width=ind_canvas_width)
+        self.DAC_ALARM_IND = self.dacCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.dacCanvas.grid(row=1,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="DAC Near Rail",width=labelw,justify=LEFT,anchor="w").grid(row=1,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+
+        # Antenna open
+        self.openCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.AntennaOpen_ALARM_IND = self.openCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.openCanvas.grid(row=2,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Antennna Open",width=labelw,justify=LEFT,anchor="w").grid(row=2,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
+        # Antenna Shorted
+        self.shortCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.AntennaShort_ALARM_IND = self.shortCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.shortCanvas.grid(row=3,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Antennna Short",width=labelw,justify=LEFT,anchor="w").grid(row=3,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
+        # Not tracking Sats
+        self.noSatCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.N0SATs_ALARM_IND = self.noSatCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.noSatCanvas.grid(row=4,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Not Tracking Sats",width=labelw,justify=LEFT,anchor="w").grid(row=4,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
+        # Not discaplining
+        self.notDiscipiningCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.N0TDISCIPLINING_ALARM_IND = self.notDiscipiningCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.notDiscipiningCanvas.grid(row=5,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Disciplining Oscillator",width=labelw,justify=LEFT,anchor="w").grid(row=5,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        # Survey in process
+        self.surveyCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.SURVEYIN_ALARM_IND = self.surveyCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.surveyCanvas.grid(row=6,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Survey-In Progress",width=labelw,justify=LEFT,anchor="w").grid(row=6,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
+        # No stored Positon
+        self.noPosCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.NOPOSITION_ALARM_IND = self.noPosCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.noPosCanvas.grid(row=7,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="No Position Stored",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
+        # Leap second pending
+        self.leapSCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.LEAPS_ALARM_IND = self.leapSCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.leapSCanvas.grid(row=8,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Leap Second Pending",width=labelw,justify=LEFT,anchor="w").grid(row=8,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
+        # In test mode
+
+        # Position Questionable
+        self.posQCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.POSITIONQ_ALARM_IND = self.posQCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.posQCanvas.grid(row=9,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Position Questionable",width=labelw,justify=LEFT,anchor="w").grid(row=9,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
+        # Almanac not complete
+        self.almanacCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.ALMANAC_ALARM_IND = self.almanacCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.almanacCanvas.grid(row=10,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="Almanac Incomplete",width=labelw,justify=LEFT,anchor="w").grid(row=10,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+    
+        # PPS not generated
+        self.ppsCanvas = Canvas(minorAlarms_frame,height= ind_canvas_height, width = ind_canvas_width)
+        self.PPSNOTGEN_ALARM_IND = self.ppsCanvas.create_oval(indy0, indx0, indy1, indx1)  # Create a circle on the Canvas
+        self.ppsCanvas.grid(row=11,column=0,pady=ind_pady,padx=indpadx)
+        mlabel = Label(minorAlarms_frame,text="PPS Not Generated",width=labelw,justify=LEFT,anchor="w").grid(row=11,column=1,sticky=W,padx=labelpadx,pady=labelpady)
+        
         
         #Setup Figures
         fpc_figure, (self.fpco,self.etio,self.sigo) = plt.subplots(nrows=3, ncols=1, figsize=(14,8), dpi=75, constrained_layout=True)
@@ -451,7 +601,10 @@ class RadSyncUi():
         fpc_canvas.draw()
         # End of figures
         
-        
+# =============================================================================
+# =============================================================================
+# ============================================================================
+# =============================================================================
         
     def _setup_slave_ui_layout(self):
         '''
@@ -553,16 +706,18 @@ class RadSyncUi():
         mlabel = Label(oscillator_frame, text="Oscillator Information",font=("Arial",11)).grid(row=0,column=0,columnspan=2,padx=xpad,pady=ypad)
         mlabel = Label(oscillator_frame,text="GPSDO Status: ",width=labelw,justify=LEFT,anchor="w").grid(row=2,column=0,sticky=W,padx=xpad,pady=ypad)
         mStatus = Label(oscillator_frame,textvariable=self.gpsdo_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=2,column=1,sticky=W,padx=xpad,pady=ypad)
-        mlabel = Label(oscillator_frame,text="Rb Status: ",width=labelw,justify=LEFT,anchor="w").grid(row=3,column=0,sticky=W,padx=xpad,pady=ypad)
-        mRbStatus = Label(oscillator_frame,textvariable=self.rubidium_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=3,column=1, sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(oscillator_frame,text="Disciplining Status: ",width=labelw,justify=LEFT,anchor="w").grid(row=3,column=0,sticky=W,padx=xpad,pady=ypad)
+        mDisapliningStatus = Label(oscillator_frame,textvariable=self.disciplining_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=3,column=1, sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(oscillator_frame,text="Current Freq:  ",width=labelw,justify=LEFT,anchor="w").grid(row=4,column=0, sticky=W,padx=xpad,pady=ypad)
         mCurFreq = Label(oscillator_frame,textvariable=self.current_gpsdo_freq,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=4,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(oscillator_frame,text="Holdover Freq:  ",width=labelw,justify=LEFT,anchor="w").grid(row=5,column=0,sticky=W,padx=xpad,pady=ypad)
         mHoldFreq = Label(oscillator_frame,textvariable=self.gpsdo_holdover_freq,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=5,column=1, sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(oscillator_frame,text="Time Constant Mode:  ",width=labelw,justify=LEFT,anchor="w").grid(row=6,column=0, sticky=W,padx=xpad,pady=ypad)
         mTimeConMode = Label(oscillator_frame,textvariable=self.gpsdo_time_constant_mode,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=6,column=1,sticky=W,padx=xpad,pady=ypad)
-        mlabelend = Label(oscillator_frame,text="Time Constant Value:  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
+        mlabelend = Label(oscillator_frame,text="Time Constant Value (s):  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
         mTimeConVal = Label(oscillator_frame,textvariable=self.gpsdo_time_constant_value,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=7,column=1,sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(oscillator_frame,text="Holdover Duration (s):  ",width=labelw,justify=LEFT,anchor="w").grid(row=8,column=0,sticky=W,padx=xpad,pady=ypad)
+        mHoldoverDur = Label(oscillator_frame,textvariable=self.gpsdo_holdover_duration,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=8,column=1,sticky=W,padx=xpad,pady=ypad)
         #End of Oscillator Frame
         
         
@@ -575,15 +730,19 @@ class RadSyncUi():
         mLatitude = Label(gpsReceiever_frame,textvariable=self.gpsdo_latitude,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=2,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="Longitude: ",width=labelw,justify=LEFT,anchor="w").grid(row=3,column=0,sticky=W,padx=xpad,pady=ypad)
         mLongitude = Label(gpsReceiever_frame,textvariable=self.gpsdo_longitude,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=3,column=1,sticky=W,padx=xpad,pady=ypad)
-        mlabel = Label(gpsReceiever_frame,text="Altitude:  ",width=labelw,justify=LEFT,anchor="w").grid(row=4,column=0, sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(gpsReceiever_frame,text="Altitude (WGS84):  ",width=labelw,justify=LEFT,anchor="w").grid(row=4,column=0, sticky=W,padx=xpad,pady=ypad)
         mAltitude = Label(gpsReceiever_frame,textvariable=self.gpsdo_altitude,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=4,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="Satellites:  ",width=labelw,justify=LEFT,anchor="w").grid(row=5,column=0,sticky=W,padx=xpad,pady=ypad)
         mSatellites = Label(gpsReceiever_frame,textvariable=self.gpsdo_satellites,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=5,column=1,sticky=W,padx=xpad,pady=ypad)
         mlabel = Label(gpsReceiever_frame,text="Tracking:  ",width=labelw,justify=LEFT,anchor="w").grid(row=6,column=0, sticky=W,padx=xpad,pady=ypad)
         mTracking = Label(gpsReceiever_frame,textvariable=self.gpsdo_tracking_info,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=6,column=1,sticky=W,padx=xpad,pady=ypad)
-        mlabel = Label(gpsReceiever_frame,text="GPS Validitiy:  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
-        mValididty = Label(gpsReceiever_frame,textvariable=self.gpsdo_gps_validity,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=7,column=1,sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(gpsReceiever_frame,text="GPS Status:  ",width=labelw,justify=LEFT,anchor="w").grid(row=7,column=0,sticky=W,padx=xpad,pady=ypad)
+        mValididty = Label(gpsReceiever_frame,textvariable=self.gpsdo_gps_status,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=7,column=1,sticky=W,padx=xpad,pady=ypad)
+        mlabel = Label(gpsReceiever_frame,text="Self-Survey Prog:  ",width=labelw,justify=LEFT,anchor="w").grid(row=8,column=0,sticky=W,padx=xpad,pady=ypad)
+        mSelfSurvey = Label(gpsReceiever_frame,textvariable=self.self_survey_progress,width=valw,justify=LEFT,anchor="w",bg="white").grid(row=8,column=1,sticky=W,padx=xpad,pady=ypad)
         #End of GPS Receiever Frame
+        
+
         
         #Setup Figures
         fpc_figure, (self.fpco,self.etio,self.sigo) = plt.subplots(nrows=3, ncols=1, figsize=(14,8), dpi=75, constrained_layout=True)
