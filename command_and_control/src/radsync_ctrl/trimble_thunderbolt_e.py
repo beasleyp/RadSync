@@ -371,6 +371,7 @@ class ThunderboltGPSDO():
 
 
     def _decodePrimaryTimingPacket(self,report):
+        try:
               # decode date and time 
               self.GpsDateTime = str(report[11])+str(report[10])+str(report[9])+str(report[8])+str(report[7])+str(report[6])
               #print(self.GpsDateTime)
@@ -400,10 +401,12 @@ class ThunderboltGPSDO():
                      self.timeSetSource = 'GPS'
               else : self.haveSetSource = 'User'
               '''
-
+        except Exception as e:
+              print("Exception whilst decoding Trimble Timing packet\n")
+              print(str(e), "\n")
 
     def _decodeSupplementalTimingPacket(self,report):
-
+        try:
             # receiver mode - Tracking - Done
               self.GPSReceiverMode = _decodeGPSReceiverMode(str(report[2]))
             # discipling mode - GPSDO Status - Done
@@ -449,7 +452,9 @@ class ThunderboltGPSDO():
             # PPS quantisation error (ns)
                  #This value is not useful on a ThunderBolt E since the PPS output is derived from a
                  #disciplined oscillator and therefore does not have any quantization error
-
+        except Exception as e:
+                 print("Exception whilst decoding Trimble Supplemental Timing Packet\n")
+                 print(str(e), "\n")
       
         
     class MinorAlarms():
@@ -458,40 +463,45 @@ class ThunderboltGPSDO():
             self.updateMinorAlarms([0,0,0,0,0,0,0,0,0,0,0,0,0])
     
         def updateMinorAlarms(self, minor_alarms):
-              if minor_alarms[12] == 0:
-                     self.DACALARM = False
-              else : self.DACALARM = True
-              if minor_alarms[11] == 0:
-                     self.ANTENNAOPEN = False
-              else : self.ANTENNAOPEN = True                   
-              if minor_alarms[10] == 0:
-                     self.ANTENNASHORT = False
-              else : self.ANTENNASHORT = True         
-              if minor_alarms[9] == 0:
-                     self.NOSATS = False
-              else : self.NOSATS = True      
-              if minor_alarms[8] == 0:
-                     self.NODISCIPLINE = False
-              else : self.NODISCIPLINE = True
-              if minor_alarms[7] == 0:
-                     self.SURVEYIN = False
-              else : self.SURVEYIN = True
-              if minor_alarms[6] == 0:
-                     self.NOPOSITION = False
-              else : self.NOPOSITION = True                   
-              if minor_alarms[5] == 0:
-                     self.LEAPSECOND = False
-              else : self.LEAPSECOND = True         
-              if minor_alarms[3] == 0:
-                     self.POSQ = False
-              else : self.POSQ = True      
-              if minor_alarms[1] == 0:
-                     self.ALMANAC = False
-              else : self.ALMANAC = True
-              if minor_alarms[0] == 0:
-                     self.PPSNOTGEN = False
-              else : self.PPSNOTGEN = True
-           
+             try: 
+                  print(str(minor_alarms))
+                  if minor_alarms[12] == 0:
+                         self.DACALARM = False
+                  else : self.DACALARM = True
+                  if minor_alarms[11] == 0:
+                         self.ANTENNAOPEN = False
+                  else : self.ANTENNAOPEN = True                   
+                  if minor_alarms[10] == 0:
+                         self.ANTENNASHORT = False
+                  else : self.ANTENNASHORT = True         
+                  if minor_alarms[9] == 0:
+                         self.NOSATS = False
+                  else : self.NOSATS = True      
+                  if minor_alarms[8] == 0:
+                         self.NODISCIPLINE = False
+                  else : self.NODISCIPLINE = True
+                  if minor_alarms[7] == 0:
+                         self.SURVEYIN = False
+                  else : self.SURVEYIN = True
+                  if minor_alarms[6] == 0:
+                         self.NOPOSITION = False
+                  else : self.NOPOSITION = True                   
+                  if minor_alarms[5] == 0:
+                         self.LEAPSECOND = False
+                  else : self.LEAPSECOND = True         
+                  if minor_alarms[3] == 0:
+                         self.POSQ = False
+                  else : self.POSQ = True      
+                  if minor_alarms[1] == 0:
+                         self.ALMANAC = False
+                  else : self.ALMANAC = True
+                  if minor_alarms[0] == 0:
+                         self.PPSNOTGEN = False
+                  else : self.PPSNOTGEN = True
+             except Exception as e:
+                 print("Exception whilst updating Trimble Minor alarms")
+                 print(str(e), "\n")
 
 def bitfield(n):
+    print(n)
     return [1 if digit=='1' else 0 for digit in bin(n)] # [1:] to chop off the "0b" part 

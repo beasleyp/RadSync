@@ -221,10 +221,12 @@ class Trigger():
 
       
     def realTimeCounter(self):
+      print("Trigger Deadline: ", self.unix_gps_trigger_deadline)
+      print("Current time", main_script.GPSDO.epochGpsDateTime)
       if self.unix_gps_trigger_deadline != -1: #only clock RTC if there is a trigger time set.
          delta = self.unix_gps_trigger_deadline - main_script.GPSDO.epochGpsDateTime
          main_script.MainUi.trigger_countdown_text.set("Time until Trigger: " + str(delta))
-         if (delta == 1):
+         if (delta == 1) or (delta < -1):
             GPIO.remove_event_detect(Trigger.PPS_OUT)
             self.sendTrigger() 
             self.unix_gps_trigger_deadline = -1 # reset the epoch trigger deadline
