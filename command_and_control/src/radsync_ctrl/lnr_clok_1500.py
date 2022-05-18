@@ -93,11 +93,11 @@ class SpecGPSDO():
       self.ConstantValue = ""
       self.HoldoverDuration = ""
       #Variables for GPS Receiver Data Frame
-      self.Latitude =  ""
+      self.Latitude =  0
       self.LatitudeLabel = ""
-      self.Longitude =  ""
+      self.Longitude =  0
       self.LongitudeLabel = ""
-      self.Altitude =  ""  # currently unused in lnr_clok_1500
+      self.Altitude =  0  # currently unused in lnr_clok_1500
       self.Satellites = "" # currently unused in lnr_clok_1500
       self.GPSStatus = ""
       self.GPSReceiverMode = "" # Trimble Related
@@ -128,14 +128,14 @@ class SpecGPSDO():
                  timeout = 1)
              #print "GPSDO Setup Started"
               
-             c = 3
+             c = 2
              while c > 0: #loop through 3 attempts to connect to GPSDO
                  c -= 1
                  self.setGpsCom(False)
                  self.stopBeating()  #Ensure GPSDO isn't beating any messages
                  if (self.getSerialNo() == ''):
                    self.gpsdoDetected = False
-                   print("GPSDO not detected")
+                   print("LNRCLOK-1500 GPSDO not detected")
                  else:
                    time.sleep(0.1)
               
@@ -184,12 +184,12 @@ class SpecGPSDO():
     def setGpsCom(self, flag):
         if flag == True:
             self.collectResponse('@@@@GPS')
-            while(True):
-              print(self.GPSDO_SER.readline() + "\n")
-            #print "GPS Mode Enabled"
+            #while(True):
+            print(self.GPSDO_SER.readline() + "\n")
+            print("GPS Mode Enabled")
         elif (flag == False):
             self.collectResponse('@@@@')
-            #print "GPS Mode Disabled"
+            print("GPS Mode Disabled")
             
     def setTrack(self, flag):
         if flag == True:
@@ -405,8 +405,8 @@ class SpecGPSDO():
       
     def decodeGPRMC(self,response):
        responseArray = response.split(",") 
-       self.Latitude =  responseArray[3] 
+       self.Latitude =  float(responseArray[3])
        self.LatitudeLabel = responseArray[4]
-       self.Longitude = responseArray[5]
+       self.Longitude = float(responseArray[5])
        self.LongitudeLabel = responseArray[6]
        
